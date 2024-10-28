@@ -1,2 +1,2 @@
 # MyWatchList
-CME-3401 Project
+CME-3401 Class Project
