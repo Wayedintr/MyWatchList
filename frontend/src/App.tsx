@@ -1,19 +1,11 @@
-import { ModeToggle } from "./components/mode-toggle";
-import { Button } from "./components/ui/button";
+import { RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
+import { router } from "./Router";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <Button
-        variant={"default"}
-        onClick={() => {
-          console.log("asdasd");
-        }}
-      >
-        Example
-      </Button>
-      <ModeToggle />
+    <ThemeProvider>
+      <RouterProvider router={router} />
     </ThemeProvider>
   );
 }
