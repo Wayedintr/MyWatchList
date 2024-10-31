@@ -3,12 +3,8 @@ const plugin = require("tailwindcss/plugin");
 
 module.exports = {
   darkMode: ["class"],
-  content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
+
   theme: {
     container: {
       center: true,
@@ -68,49 +64,27 @@ module.exports = {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: 0 },
-          to: { height: "var(--radix-accordion-content-height)" },
+          from: {
+            height: "0",
+          },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+          },
         },
         "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: 0 },
+          from: {
+            height: "var(--radix-accordion-content-height)",
+          },
+          to: {
+            height: "0",
+          },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
-      transitionDuration: {
-        250: "250ms",
-      },
-      boxShadow: {
-        "bottom-xs": "0px 1px 2px rgba(0,0,0,0.1)",
-        "bottom-sm": "0px 2px 4px rgba(0,0,0,0.1)",
-        "bottom-md": "0px 4px 6px rgba(0,0,0,0.1)",
-        "bottom-lg": "0px 6px 8px rgba(0,0,0,0.1)",
-        "bottom-xl": "0px 8px 10px rgba(0,0,0,0.1)",
-        "bottom-2xl": "0px 12px 16px rgba(0,0,0,0.1)",
-      },
-      textShadow: {
-        sm: "0 1px 2px var(--tw-shadow-color)",
-        DEFAULT: "0 2px 4px var(--tw-shadow-color)",
-        lg: "0 3px 16px var(--tw-shadow-color)",
-        xl: "0 4px 24px var(--tw-shadow-color)",
-      },
     },
   },
-  plugins: [
-    require("tailwind-scrollbar"),
-    require("tailwindcss-animate"),
-    plugin(function ({ matchUtilities, theme }) {
-      matchUtilities(
-        {
-          "text-shadow": (value) => ({
-            textShadow: value,
-          }),
-        },
-        { values: theme("textShadow") }
-      );
-    }),
-  ],
+  plugins: [require("tailwindcss-animate")],
 };
