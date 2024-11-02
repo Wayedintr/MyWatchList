@@ -3,57 +3,60 @@
 @tailwind utilities;
 
 @layer base {
-  /* Default Color Scheme: Muted Twilight */
   :root {
-    --background: hsl(220, 12%, 96%);
-    --foreground: hsl(220, 15%, 20%);
-    --muted: hsl(220, 12%, 86%);
-    --muted-foreground: hsl(220, 12%, 40%);
-    --popover: hsl(220, 12%, 96%);
-    --popover-foreground: hsl(220, 15%, 20%);
-    --card: hsl(220, 12%, 96%);
-    --card-foreground: hsl(220, 15%, 20%);
-    --border: hsl(220, 12%, 85%);
-    --input: hsl(220, 12%, 85%);
-    --primary: hsl(220, 20%, 30%);
-    --primary-foreground: hsl(0, 0%, 98%);
-    --secondary: hsl(220, 15%, 88%);
-    --secondary-foreground: hsl(220, 20%, 30%);
-    --accent: hsl(220, 20%, 50%);
-    --accent-foreground: hsl(0, 0%, 98%);
-    --destructive: hsl(0, 60%, 50%);
-    --destructive-foreground: hsl(0, 0%, 98%);
-    --warning: hsl(45, 100%, 55%);
-    --warning-foreground: hsl(220, 15%, 20%);
-    --success: hsl(120, 35%, 45%);
-    --success-foreground: hsl(0, 0%, 98%);
-    --ring: hsl(220, 12%, 85%);
+    --background: 210 15% 98%;
+    --foreground: 210 15% 10%;
+    --card: 210 15% 99%;
+    --card-foreground: 210 15% 10%;
+    --popover: 210 15% 99%;
+    --popover-foreground: 210 15% 10%;
+    --primary: 200 20% 45%;
+    --primary-foreground: 200 20% 98%;
+    --secondary: 180 10% 75%;
+    --secondary-foreground: 180 10% 10%;
+    --muted: 210 15% 90%;
+    --muted-foreground: 210 15% 40%;
+    --accent: 240 15% 55%;
+    --accent-foreground: 240 15% 98%;
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 60% 98%;
+    --border: 210 15% 85%;
+    --input: 210 15% 85%;
+    --ring: 200 20% 45%;
     --radius: 0.5rem;
+    --chart-1: 200 20% 45%;
+    --chart-2: 180 10% 75%;
+    --chart-3: 240 15% 55%;
+    --chart-4: 160 20% 50%;
+    --chart-5: 30 15% 60%;
   }
+
   .dark {
-    --background: hsl(220, 15%, 20%);
-    --foreground: hsl(220, 12%, 96%);
-    --muted: hsl(220, 15%, 28%);
-    --muted-foreground: hsl(220, 15%, 75%);
-    --popover: hsl(220, 15%, 20%);
-    --popover-foreground: hsl(220, 12%, 96%);
-    --card: hsl(220, 15%, 20%);
-    --card-foreground: hsl(220, 12%, 96%);
-    --border: hsl(220, 15%, 28%);
-    --input: hsl(220, 15%, 28%);
-    --primary: hsl(220, 12%, 96%);
-    --primary-foreground: hsl(220, 20%, 30%);
-    --secondary: hsl(220, 15%, 28%);
-    --secondary-foreground: hsl(220, 12%, 96%);
-    --accent: hsl(220, 20%, 50%);
-    --accent-foreground: hsl(220, 12%, 96%);
-    --destructive: hsl(0, 55%, 45%);
-    --destructive-foreground: hsl(0, 0%, 98%);
-    --warning: hsl(45, 100%, 55%);
-    --warning-foreground: hsl(220, 12%, 96%);
-    --success: hsl(120, 35%, 45%);
-    --success-foreground: hsl(220, 12%, 96%);
-    --ring: hsl(220, 15%, 28%);
+    --background: 210 20% 10%;
+    --foreground: 210 15% 98%;
+    --card: 210 20% 12%;
+    --card-foreground: 210 15% 98%;
+    --popover: 210 20% 12%;
+    --popover-foreground: 210 15% 98%;
+    --primary: 200 20% 55%;
+    --primary-foreground: 200 20% 10%;
+    --secondary: 180 10% 35%;
+    --secondary-foreground: 180 10% 98%;
+    --muted: 210 20% 20%;
+    --muted-foreground: 210 15% 70%;
+    --accent: 240 15% 65%;
+    --accent-foreground: 240 15% 10%;
+    --destructive: 0 60% 40%;
+    --destructive-foreground: 0 60% 98%;
+    --border: 210 20% 25%;
+    --input: 210 20% 25%;
+    --ring: 200 20% 55%;
+    --radius: 0.5rem;
+    --chart-1: 200 20% 55%;
+    --chart-2: 180 10% 35%;
+    --chart-3: 240 15% 65%;
+    --chart-4: 160 20% 60%;
+    --chart-5: 30 15% 50%;
   }
 }
 
