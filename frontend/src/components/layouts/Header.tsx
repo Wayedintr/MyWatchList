@@ -9,6 +9,7 @@ import icon from "@/icon.jpg";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {ModeToggle} from "@/components/mode-toggle";
+import { Input } from "@/components/ui/input"
 
 export function Header() {
   return (
@@ -34,14 +35,17 @@ export function Header() {
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
-
       <div className="flex gap-2">
         <ModeToggle/>
+        <Input></Input>
         <Avatar>
           <AvatarImage src="https://avatars.githubusercontent.com/u/76536654?v=4" />
           <AvatarFallback>BY</AvatarFallback>
         </Avatar>
+        
       </div>
+
+      
     </header>
   );
 }
