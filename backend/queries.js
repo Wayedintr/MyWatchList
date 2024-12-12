@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS shows (
   original_language VARCHAR(255),
   original_title VARCHAR(255),
   overview VARCHAR(3000),
+  popularity FLOAT,
   poster_path VARCHAR(255),
   release_date DATE,
   runtime INT,
@@ -114,16 +115,17 @@ CREATE TABLE IF NOT EXISTS episodes (
   id SERIAL PRIMARY KEY,
   show_id INT,
   is_movie BOOLEAN,
-  FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE,
   name VARCHAR(255),
-  overview VARCHAR(1000),
+  FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE,
+  overview VARCHAR(3000),
   vote_average FLOAT,
   vote_count INT,
   air_date DATE,
   episode_number INT,
   season_number INT,
   runtime INT,
-  still_path VARCHAR(255)
+  still_path VARCHAR(255),
+  UNIQUE (show_id, is_movie, season_number, episode_number)
 );
 
 CREATE TABLE IF NOT EXISTS user_shows (
@@ -170,7 +172,77 @@ CREATE TABLE IF NOT EXISTS show_comments (
     await client.end();
   }
 };
-const insertMovieById = async (showId, is_movie) => {
+
+const insertEpisodesBySeason = async (showId, seasonNumber, is_movie) => {
+  if (is_movie) return; // Skip episodes for movies
+
+  const client = new Client({
+    user: "postgres",
+    host: "localhost",
+    database: "mywatchlist",
+    password: "boran4545",
+    port: 5432,
+  });
+
+  try {
+    // Connect to the database
+    await client.connect();
+
+    // Fetch season data from TMDB API
+    const apiKey = "c8a5dcf600f29bb2715cc66262fb3186";
+    const apiUrl = `https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?api_key=${apiKey}`;
+    const response = await axios.get(apiUrl);
+
+    if (response.status !== 200) {
+      throw new Error(`Failed to fetch season data for show ID ${showId}, season ${seasonNumber}`);
+    }
+
+    const seasonData = response.data;
+
+    // Insert episodes into the "episodes" table
+    for (const episode of seasonData.episodes) {
+      const insertEpisodeQuery = `
+        INSERT INTO episodes (
+          show_id, is_movie, name, overview, vote_average, vote_count,
+          air_date, episode_number, season_number, runtime, still_path
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ON CONFLICT (show_id, is_movie, season_number, episode_number) DO UPDATE SET
+          name = COALESCE(EXCLUDED.name, episodes.name),
+          overview = COALESCE(EXCLUDED.overview, episodes.overview),
+          vote_average = COALESCE(EXCLUDED.vote_average, episodes.vote_average),
+          vote_count = COALESCE(EXCLUDED.vote_count, episodes.vote_count),
+          air_date = COALESCE(EXCLUDED.air_date, episodes.air_date),
+          runtime = COALESCE(EXCLUDED.runtime, episodes.runtime),
+          still_path = COALESCE(EXCLUDED.still_path, episodes.still_path);
+      `;
+
+      const episodeValues = [
+        showId,
+        is_movie,
+        episode.name,
+        episode.overview,
+        episode.vote_average,
+        episode.vote_count,
+        episode.air_date,
+        episode.episode_number,
+        seasonNumber,
+        episode.runtime,
+        episode.still_path,
+      ];
+
+      await client.query(insertEpisodeQuery, episodeValues);
+    }
+
+    console.log(`Episodes for show ID ${showId}, season ${seasonNumber} inserted successfully.`);
+  } catch (err) {
+    console.error("Error inserting episodes:", err.message);
+  } finally {
+    await client.end();
+  }
+};
+
+const insertShowById = async (showId, is_movie) => {
   const client = new Client({
     user: "postgres",
     host: "localhost",
@@ -209,6 +281,7 @@ const insertMovieById = async (showId, is_movie) => {
       original_language: show.original_language,
       original_title: show.original_title || show.original_name || null,
       overview: show.overview,
+      popularity: show.popularity || null,
       poster_path: show.poster_path,
       release_date: show.release_date || show.first_air_date || null,
       runtime: show.runtime || null,
@@ -236,9 +309,9 @@ const insertMovieById = async (showId, is_movie) => {
     // Insert movie data into the "shows" table
     const insertShowQuery = `
       INSERT INTO shows (
-        show_id,is_movie, adult, backdrop_path, origin_country, original_language,
-        original_title, overview, poster_path, release_date, runtime,
-        status, tagline, title, vote_average, vote_count, 
+        show_id, is_movie, adult, backdrop_path, origin_country, original_language,
+        original_title, overview, popularity, poster_path, release_date, runtime,
+        status, tagline, title, vote_average, vote_count,
         episode_run_time, in_production,
         number_of_episodes, number_of_seasons
       )
@@ -246,7 +319,7 @@ const insertMovieById = async (showId, is_movie) => {
         $1, $2, $3, $4, $5,
         $6, $7, $8, $9, $10,
         $11, $12, $13, $14, $15,
-        $16, $17, $18, $19, $20
+        $16, $17, $18, $19, $20, $21
       )
       ON CONFLICT (is_movie, show_id) DO UPDATE SET
         adult = EXCLUDED.adult,
@@ -255,6 +328,7 @@ const insertMovieById = async (showId, is_movie) => {
         original_language = EXCLUDED.original_language,
         original_title = EXCLUDED.original_title,
         overview = EXCLUDED.overview,
+        popularity = EXCLUDED.popularity,
         poster_path = EXCLUDED.poster_path,
         release_date = EXCLUDED.release_date,
         runtime = EXCLUDED.runtime,
@@ -278,6 +352,7 @@ const insertMovieById = async (showId, is_movie) => {
       showData.original_language,
       showData.original_title,
       showData.overview,
+      showData.popularity,
       showData.poster_path,
       showData.release_date,
       showData.runtime,
@@ -294,6 +369,67 @@ const insertMovieById = async (showId, is_movie) => {
 
     await client.query(insertShowQuery, insertShowValues);
 
+    // Insert genres
+    if (show.genres && show.genres.length > 0) {
+      for (const genre of show.genres) {
+        const insertGenreQuery = `
+          INSERT INTO genres (id, name)
+          VALUES ($1, $2)
+          ON CONFLICT (id) DO NOTHING
+        `;
+        await client.query(insertGenreQuery, [genre.id, genre.name]);
+
+        // Insert show_genres
+        const insertShowGenreQuery = `
+          INSERT INTO show_genres (show_id, is_movie, genre_id)
+          VALUES ($1, $2, $3)
+          ON CONFLICT DO NOTHING
+        `;
+        await client.query(insertShowGenreQuery, [showId, is_movie, genre.id]);
+      }
+    }
+
+    // Insert seasons (for TV shows)
+    if (!is_movie && show.seasons && show.seasons.length > 0) {
+      for (const season of show.seasons) {
+        const insertSeasonQuery = `
+          INSERT INTO seasons (
+            show_id, is_movie, air_date, episode_count, name, overview,
+            poster_path, season_number, vote_average
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          ON CONFLICT (id) DO UPDATE SET
+            air_date = COALESCE(EXCLUDED.air_date, seasons.air_date),
+            episode_count = COALESCE(EXCLUDED.episode_count, seasons.episode_count),
+            name = COALESCE(EXCLUDED.name, seasons.name),
+            overview = COALESCE(EXCLUDED.overview, seasons.overview),
+            poster_path = COALESCE(EXCLUDED.poster_path, seasons.poster_path),
+            vote_average = COALESCE(EXCLUDED.vote_average, seasons.vote_average);
+        `;
+        await client.query(insertSeasonQuery, [
+          showId,
+          is_movie,
+          season.air_date,
+          season.episode_count,
+          season.name,
+          season.overview,
+          season.poster_path,
+          season.season_number,
+          season.vote_average,
+        ]);
+      }
+    }
+    
+    // Fetch seasons and episodes for TV shows
+    if (!is_movie) {
+      const show = response.data;
+      for (const season of show.seasons) {
+        // Insert season data (existing logic)
+        await insertEpisodesBySeason(showId, season.season_number, is_movie);
+      }
+    }
+    
+
     console.log(`Movie with ID ${showId} inserted successfully.`);
   } catch (err) {
     console.error("Error inserting movie:", err.message);
@@ -303,4 +439,4 @@ const insertMovieById = async (showId, is_movie) => {
 };
 
 // Export the functions
-export { createTables, createDatabase, insertMovieById };
+export { createTables, createDatabase, insertShowById };

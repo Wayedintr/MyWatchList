@@ -2,7 +2,7 @@ import express from "express";
 import axios from "axios";
 import bodyParser from "body-parser";
 import cors from "cors";
-import {createDatabase, createTables, insertMovieById} from "./queries.js";
+import {createDatabase, createTables, insertShowById} from "./queries.js";
 
 const app = express();
 const port = 3000;
@@ -16,11 +16,11 @@ app.use(express.static("public"));
 const initializeDatabase = async () => {
   await createDatabase();
   await createTables();
-  for (let i = 1; i <= 850000; i++) {
-    await insertMovieById(i,false);
-    if(i % 100000 === 0){
-      console.log(`Inserted ${i} movies`);
-    }
+  insertShowById(30984, false);
+  insertShowById(278523, false);
+  for (let i = 1; i <= 100; i++) {
+    await insertShowById(i, true);
+    await insertShowById(i, false);
   }
 };
 
