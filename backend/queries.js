@@ -1,30 +1,46 @@
-import express from "express";
 import axios from "axios";
-import bodyParser from "body-parser";
-import cors from "cors";
-import pkg from "pg";
-const { Client } = pkg;
+import pg from "pg";
+import dotenv from "dotenv";
+
+const { Pool, Client } = pg;
+
+// Load environment variables from .env file
+dotenv.config();
+
+// Create a connection pool
+const pool = new Pool();
+pool.on("error", (err) => {
+  console.error("Idle client error:", err.message, err.stack);
+});
+
+// Utility function to handle pool connections
+const withPoolConnection = async (callback, errorHandler) => {
+  const client = await pool.connect();
+  try {
+    return await callback(client);
+  } catch (err) {
+    console.error("Error during database operation:", err.message);
+
+    // If a custom error handler is provided, call it
+    if (errorHandler && typeof errorHandler === "function") {
+      await errorHandler(err, client); // Pass the error and client for further actions
+    }
+
+    throw err; // Re-throw the error for higher-level handling
+  } finally {
+    client.release();
+  }
+};
 
 // Function to create the database
 const createDatabase = async () => {
-  const adminClient = new Client({
-    user: "postgres", // PostgreSQL superuser
-    host: "localhost",
-    database: "postgres", // Connect to the default database
-    password: "boran4545",
-    port: 5432,
-  });
+  const adminClient = new Client({ database: "postgres" });
 
   try {
     await adminClient.connect();
-    const dbName = "mywatchlist";
-
-    // Check if the database already exists
-    const dbExistsResult = await adminClient.query(
-      `SELECT 1 FROM pg_database WHERE datname = '${dbName}'`
-    );
-    if (dbExistsResult.rows.length === 0) {
-      // Create the database if it doesn't exist
+    const dbName = process.env.PGDATABASE;
+    const dbExists = await adminClient.query(`SELECT 1 FROM pg_database WHERE datname = '${dbName}'`);
+    if (dbExists.rows.length === 0) {
       await adminClient.query(`CREATE DATABASE ${dbName}`);
       console.log(`Database "${dbName}" created successfully.`);
     } else {
@@ -33,25 +49,14 @@ const createDatabase = async () => {
   } catch (err) {
     console.error("Error creating database:", err.message);
   } finally {
-    await adminClient.end();
+    adminClient.end();
   }
 };
 
 // Function to create the tables
 const createTables = async () => {
-  const client = new Client({
-    user: "postgres",
-    host: "localhost",
-    database: "mywatchlist", // Connect to the newly created database
-    password: "boran4545",
-    port: 5432,
-  });
-
-  try {
-    await client.connect();
-
-    // Create tables
-    const createTablesQuery = `
+  // Create tables
+  const createTablesQuery = `
       CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(255) NOT NULL,
@@ -164,42 +169,24 @@ CREATE TABLE IF NOT EXISTS show_comments (
 );
     `;
 
+  await withPoolConnection(async (client) => {
     await client.query(createTablesQuery);
     console.log("Tables created successfully.");
-  } catch (err) {
-    console.error("Error creating tables:", err.message);
-  } finally {
-    await client.end();
-  }
+  });
 };
 
+// Function to insert episodes by season
 const insertEpisodesBySeason = async (showId, seasonNumber, is_movie) => {
-  if (is_movie) return; // Skip episodes for movies
+  if (is_movie) {
+    return;
+  }
 
-  const client = new Client({
-    user: "postgres",
-    host: "localhost",
-    database: "mywatchlist",
-    password: "boran4545",
-    port: 5432,
-  });
-
+  const apiUrl = `https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?api_key=${process.env.TMDB_API_KEY}`;
   try {
-    // Connect to the database
-    await client.connect();
-
-    // Fetch season data from TMDB API
-    const apiKey = "c8a5dcf600f29bb2715cc66262fb3186";
-    const apiUrl = `https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?api_key=${apiKey}`;
     const response = await axios.get(apiUrl);
-
-    if (response.status !== 200) {
-      throw new Error(`Failed to fetch season data for show ID ${showId}, season ${seasonNumber}`);
-    }
 
     const seasonData = response.data;
 
-    // Insert episodes into the "episodes" table
     for (const episode of seasonData.episodes) {
       const insertEpisodeQuery = `
         INSERT INTO episodes (
@@ -231,83 +218,71 @@ const insertEpisodesBySeason = async (showId, seasonNumber, is_movie) => {
         episode.still_path,
       ];
 
-      await client.query(insertEpisodeQuery, episodeValues);
+      await withPoolConnection(async (client) => {
+        await client.query(insertEpisodeQuery, episodeValues);
+      });
     }
 
-    console.log(`Episodes for show ID ${showId}, season ${seasonNumber} inserted successfully.`);
+    console.log(`[SUCCESS] Episodes for show ID ${showId}, season ${seasonNumber} inserted successfully.`);
   } catch (err) {
-    console.error("Error inserting episodes:", err.message);
-  } finally {
-    await client.end();
+    if (err.response && err.response.status === 404) {
+      console.warn(`[WARN] Season data for show ID ${showId}, season ${seasonNumber} not found.`);
+    } else {
+      console.error(`[ERROR] Error inserting episodes for show ID ${showId}, season ${seasonNumber}:`, err.message);
+    }
   }
 };
 
 const insertShowById = async (showId, is_movie) => {
-  const client = new Client({
-    user: "postgres",
-    host: "localhost",
-    database: "mywatchlist", // Connect to the newly created database
-    password: "boran4545",
-    port: 5432,
-  });
+  await withPoolConnection(async (client) => {
+    try {
+      const apiUrl = `https://api.themoviedb.org/3/${is_movie ? "movie" : "tv"}/${showId}?api_key=${
+        process.env.TMDB_API_KEY
+      }`;
+      const response = await axios.get(apiUrl);
 
-  try {
-    // Connect to the database
-    await client.connect();
-
-    // Fetch movie data from TMDB API
-    const apiKey = "c8a5dcf600f29bb2715cc66262fb3186";
-    const apiUrl = `https://api.themoviedb.org/3/${
-      is_movie ? "movie" : "tv"
-    }/${showId}?api_key=${apiKey}`;
-    const response = await axios.get(apiUrl);
-
-    if (response.status !== 200) {
-      throw new Error(`Failed to fetch movie data for ID ${showId}`);
-    }
-
-    const show = response.data;
-
-    // Map TMDB API fields to your database schema
-    // Correcting episode_run_time to be an array
-    const showData = {
-      show_id: show.id,
-      adult: show.adult === null ? null : show.adult,
-      backdrop_path: show.backdrop_path,
-      origin_country:
-        show.origin_country?.join(",") ||
-        show.production_countries?.map((c) => c.iso_3166_1).join(",") ||
-        null,
-      original_language: show.original_language,
-      original_title: show.original_title || show.original_name || null,
-      overview: show.overview,
-      popularity: show.popularity || null,
-      poster_path: show.poster_path,
-      release_date: show.release_date || show.first_air_date || null,
-      runtime: show.runtime || null,
-      status: show.status,
-      tagline: show.tagline,
-      title: show.title || show.name,
-      vote_average: show.vote_average,
-      vote_count: show.vote_count,
-      episode_run_time: show.episode_run_time
-        ? `{${show.episode_run_time.join(",")}}`
-        : null, // Correctly format array for PostgreSQL
-      in_production: show.in_production === null ? null : show.in_production,
-      number_of_episodes: show.number_of_episodes || null,
-      number_of_seasons: show.number_of_seasons || null,
-      is_movie: is_movie,
-    };
-
-    // Replace empty string values with null
-    Object.keys(showData).forEach((key) => {
-      if (showData[key] === "" || showData[key] === undefined) {
-        showData[key] = null;
+      if (response.status !== 200) {
+        throw new Error(`Failed to fetch movie data for ID ${showId}`);
       }
-    });
 
-    // Insert movie data into the "shows" table
-    const insertShowQuery = `
+      const show = response.data;
+
+      // Map TMDB API fields to your database schema
+      // Correcting episode_run_time to be an array
+      const showData = {
+        show_id: show.id,
+        adult: show.adult === null ? null : show.adult,
+        backdrop_path: show.backdrop_path,
+        origin_country:
+          show.origin_country?.join(",") || show.production_countries?.map((c) => c.iso_3166_1).join(",") || null,
+        original_language: show.original_language,
+        original_title: show.original_title || show.original_name || null,
+        overview: show.overview,
+        popularity: show.popularity || null,
+        poster_path: show.poster_path,
+        release_date: show.release_date || show.first_air_date || null,
+        runtime: show.runtime || null,
+        status: show.status,
+        tagline: show.tagline,
+        title: show.title || show.name,
+        vote_average: show.vote_average,
+        vote_count: show.vote_count,
+        episode_run_time: show.episode_run_time ? `{${show.episode_run_time.join(",")}}` : null, // Correctly format array for PostgreSQL
+        in_production: show.in_production === null ? null : show.in_production,
+        number_of_episodes: show.number_of_episodes || null,
+        number_of_seasons: show.number_of_seasons || null,
+        is_movie: is_movie,
+      };
+
+      // Replace empty string values with null
+      Object.keys(showData).forEach((key) => {
+        if (showData[key] === "" || showData[key] === undefined) {
+          showData[key] = null;
+        }
+      });
+
+      // Insert movie data into the "shows" table
+      const insertShowQuery = `
       INSERT INTO shows (
         show_id, is_movie, adult, backdrop_path, origin_country, original_language,
         original_title, overview, popularity, poster_path, release_date, runtime,
@@ -343,56 +318,56 @@ const insertShowById = async (showId, is_movie) => {
         number_of_seasons = EXCLUDED.number_of_seasons
     `;
 
-    const insertShowValues = [
-      showData.show_id,
-      showData.is_movie,
-      showData.adult,
-      showData.backdrop_path,
-      showData.origin_country,
-      showData.original_language,
-      showData.original_title,
-      showData.overview,
-      showData.popularity,
-      showData.poster_path,
-      showData.release_date,
-      showData.runtime,
-      showData.status,
-      showData.tagline,
-      showData.title,
-      showData.vote_average,
-      showData.vote_count,
-      showData.episode_run_time,
-      showData.in_production,
-      showData.number_of_episodes,
-      showData.number_of_seasons,
-    ];
+      const insertShowValues = [
+        showData.show_id,
+        showData.is_movie,
+        showData.adult,
+        showData.backdrop_path,
+        showData.origin_country,
+        showData.original_language,
+        showData.original_title,
+        showData.overview,
+        showData.popularity,
+        showData.poster_path,
+        showData.release_date,
+        showData.runtime,
+        showData.status,
+        showData.tagline,
+        showData.title,
+        showData.vote_average,
+        showData.vote_count,
+        showData.episode_run_time,
+        showData.in_production,
+        showData.number_of_episodes,
+        showData.number_of_seasons,
+      ];
 
-    await client.query(insertShowQuery, insertShowValues);
+      await client.query(insertShowQuery, insertShowValues);
 
-    // Insert genres
-    if (show.genres && show.genres.length > 0) {
-      for (const genre of show.genres) {
-        const insertGenreQuery = `
+      // Insert genres
+      if (show.genres && show.genres.length > 0) {
+        for (const genre of show.genres) {
+          const insertGenreQuery = `
           INSERT INTO genres (id, name)
           VALUES ($1, $2)
           ON CONFLICT (id) DO NOTHING
         `;
-        await client.query(insertGenreQuery, [genre.id, genre.name]);
+          await client.query(insertGenreQuery, [genre.id, genre.name]);
 
-        // Insert show_genres
-        const insertShowGenreQuery = `
+          // Insert show_genres
+          const insertShowGenreQuery = `
           INSERT INTO show_genres (show_id, is_movie, genre_id)
           VALUES ($1, $2, $3)
           ON CONFLICT DO NOTHING
         `;
-        await client.query(insertShowGenreQuery, [showId, is_movie, genre.id]);
+          await client.query(insertShowGenreQuery, [showId, is_movie, genre.id]);
+        }
       }
-    }
 
-    // Insert seasons (for TV shows)
-    if (!is_movie && show.seasons && show.seasons.length > 0) {
-      for (const season of show.seasons) {
-        const insertSeasonQuery = `
+      // Insert seasons (for TV shows)
+      if (!is_movie && show.seasons && show.seasons.length > 0) {
+        for (const season of show.seasons) {
+          const insertSeasonQuery = `
           INSERT INTO seasons (
             show_id, is_movie, air_date, episode_count, name, overview,
             poster_path, season_number, vote_average
@@ -406,36 +381,38 @@ const insertShowById = async (showId, is_movie) => {
             poster_path = COALESCE(EXCLUDED.poster_path, seasons.poster_path),
             vote_average = COALESCE(EXCLUDED.vote_average, seasons.vote_average);
         `;
-        await client.query(insertSeasonQuery, [
-          showId,
-          is_movie,
-          season.air_date,
-          season.episode_count,
-          season.name,
-          season.overview,
-          season.poster_path,
-          season.season_number,
-          season.vote_average,
-        ]);
+          await client.query(insertSeasonQuery, [
+            showId,
+            is_movie,
+            season.air_date,
+            season.episode_count,
+            season.name,
+            season.overview,
+            season.poster_path,
+            season.season_number,
+            season.vote_average,
+          ]);
+        }
       }
-    }
-    
-    // Fetch seasons and episodes for TV shows
-    if (!is_movie) {
-      const show = response.data;
-      for (const season of show.seasons) {
-        // Insert season data (existing logic)
-        await insertEpisodesBySeason(showId, season.season_number, is_movie);
-      }
-    }
-    
 
-    console.log(`Movie with ID ${showId} inserted successfully.`);
-  } catch (err) {
-    console.error("Error inserting movie:", err.message);
-  } finally {
-    await client.end();
-  }
+      // Fetch seasons and episodes for TV shows
+      if (!is_movie) {
+        const show = response.data;
+        for (const season of show.seasons) {
+          // Insert season data (existing logic)
+          await insertEpisodesBySeason(showId, season.season_number, is_movie);
+        }
+      }
+
+      console.log(`[SUCCESS] Show with ID ${showId} inserted successfully.`);
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        console.warn(`[WARN] Show data for ID ${showId} not found.`);
+      } else {
+        console.error(`[ERROR] Error inserting show with ID ${showId}:`, err.message);
+      }
+    }
+  });
 };
 
 // Export the functions

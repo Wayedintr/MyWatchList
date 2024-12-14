@@ -1,5 +1,6 @@
 {
   "files.associations": {
     "*.css": "tailwindcss"
-  }
+  },
+  "prettier.printWidth": 120
 }

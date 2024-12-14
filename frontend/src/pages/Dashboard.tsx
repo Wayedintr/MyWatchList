@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 interface Movie {
   id: number;
@@ -44,10 +44,7 @@ export default function Dashboard() {
         <div className="movies-grid">
           {info.map((movie) => (
             <div key={movie.id} className="movie-card">
-              <img
-                src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                alt={movie.title}
-              />
+              <img src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} alt={movie.title} />
               <h3>{movie.title}</h3>
               <p>{movie.release_date}</p>
               <p>{movie.overview}</p>
