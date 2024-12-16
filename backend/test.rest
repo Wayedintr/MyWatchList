@@ -1,0 +1,18 @@
+### Register a New User
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+    "username": "John Doe",
+    "password": "password123",
+    "mail": "eM2dR@example.com"
+}
+
+### Login with the New User
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "mail": "eM2dR@example.com",
+    "password": "password123"
+}

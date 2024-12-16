@@ -416,4 +416,4 @@ const insertShowById = async (showId, is_movie) => {
 };
 
 // Export the functions
-export { createTables, createDatabase, insertShowById };
+export { createTables, createDatabase, insertShowById, withPoolConnection};

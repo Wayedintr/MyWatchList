@@ -2,7 +2,8 @@ import express from "express";
 import axios from "axios";
 import bodyParser from "body-parser";
 import cors from "cors";
-import {createDatabase, createTables, insertShowById} from "./queries.js";
+import {createDatabase, createTables, insertShowById, withPoolConnection} from "./queries.js";
+import { login, register, authenticateToken } from "./auth.js";
 
 const app = express();
 const port = 3000;
@@ -12,16 +13,27 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
+// Routes
+app.post("/login", login); // Login route
+app.post("/register", register); // Registration route
+
+// Example protected route
+app.get("/protected", authenticateToken, (req, res) => {
+  res.json({ message: "This is a protected route", user: req.user });
+});
+
 // Function to initialize database and sync tables
 const initializeDatabase = async () => {
   await createDatabase();
   await createTables();
+  /*
   insertShowById(30984, false);
   insertShowById(278523, false);
   for (let i = 1; i <= 100; i++) {
     await insertShowById(i, true);
     await insertShowById(i, false);
   }
+  */
 };
 
 initializeDatabase();
@@ -57,3 +69,5 @@ app.get("/", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+
