@@ -8,34 +8,34 @@ import Sample from "./pages/Sample";
 import Register from "./pages/Register";
 
 export const router = createBrowserRouter([
-    {
-        path: "/",
-        element: <Applayout />,
-        children: [
-            {
-                path: "",
-                element: <Dashboard />,
-            },
-            {
-                path: "sample",
-                element: <Sample />,
-            },
-            {
-                path: "empty",
-                element: <Empty />,
-            },
-            {
-                path: "login",
-                element: <Login />,
-            },
-            {
-                path: "register",
-                element: <Register />,
-            }
-        ],
-    },
-    {
-        path: "*",
-        element: <NoMatch />,
-    },
-])
+  {
+    path: "/",
+    element: <Applayout />,
+    children: [
+      {
+        path: "",
+        element: <Dashboard />,
+      },
+      {
+        path: "sample",
+        element: <Sample />,
+      },
+      {
+        path: "empty",
+        element: <Empty />,
+      },
+    ],
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
+  {
+    path: "*",
+    element: <NoMatch />,
+  },
+]);

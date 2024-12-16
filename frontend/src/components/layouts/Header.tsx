@@ -39,7 +39,7 @@ export function Header() {
         <ModeToggle/>
         <form action="/" method="get" className="flex gap-2">
           <Input type="search" name="query" placeholder="Search" className="w-full" />
-          <button type="submit" className="text-primary-foreground">Search</button>
+          <button type="submit" className="text-primary">Search</button>
         </form>
         <Avatar>
           <AvatarImage src="https://avatars.githubusercontent.com/u/76536654?v=4" />
