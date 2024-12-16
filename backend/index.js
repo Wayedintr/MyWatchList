@@ -16,7 +16,6 @@ app.use(express.static("public"));
 // Routes
 app.post("/login", login); // Login route
 app.post("/register", register); // Registration route
-
 // Example protected route
 app.get("/protected", authenticateToken, (req, res) => {
   res.json({ message: "This is a protected route", user: req.user });
