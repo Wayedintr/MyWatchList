@@ -25,6 +25,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ mail, password }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -33,7 +34,11 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       }
 
       const data = await response.json();
-      console.log("Login successful:", data);
+      if (response.ok) {
+        console.log("Login successful:", data.message);
+      } else {
+        console.error(data.message);
+      }
       // Handle successful login (e.g., save token, redirect user)
     } catch (err: any) {
       setError(err.message);

@@ -16,3 +16,9 @@ Content-Type: application/json
     "mail": "eM2dR@example.com",
     "password": "password123"
 }
+
+### Logout
+GET http://localhost:3000/logout
+
+### Protected Route
+GET http://localhost:3000/protected

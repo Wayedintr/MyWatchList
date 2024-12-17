@@ -26,6 +26,7 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, mail, password }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -34,7 +35,11 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
       }
 
       const data = await response.json();
-      console.log("Register successful:", data);
+      if (response.ok) {
+        console.log("Register successful:", data.message);
+      } else {
+        console.error(data.message);
+      }
       // Handle successful register (e.g., save token, redirect user)
     } catch (err: any) {
       setError(err.message);

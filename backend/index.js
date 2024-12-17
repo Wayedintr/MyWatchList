@@ -1,24 +1,28 @@
 import express from "express";
 import axios from "axios";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser"; // Middleware to parse cookies
 import cors from "cors";
-import {createDatabase, createTables, insertShowById, withPoolConnection} from "./queries.js";
-import { login, register, authenticateToken } from "./auth.js";
+import { createDatabase, createTables, insertShowById, withPoolConnection } from "./queries.js";
+import { login, register, logout, authenticateToken } from "./auth.js";
 
 const app = express();
 const port = 3000;
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
+app.use(cookieParser());
+app.use(express.json());
 
 // Routes
 app.post("/login", login); // Login route
 app.post("/register", register); // Registration route
-// Example protected route
+app.get("/logout", logout);
+
 app.get("/protected", authenticateToken, (req, res) => {
-  res.json({ message: "This is a protected route", user: req.user });
+  res.json({ message: "Protected route accessed!", user: req.user });
 });
 
 // Function to initialize database and sync tables
@@ -68,5 +72,3 @@ app.get("/", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
-
