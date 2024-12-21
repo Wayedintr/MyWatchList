@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export function RegisterForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   const [username, setUsername] = useState("");
@@ -12,6 +12,7 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,7 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
       const data = await response.json();
       if (response.ok) {
         console.log("Register successful:", data.message);
+        navigate("/");
       } else {
         console.error(data.message);
       }

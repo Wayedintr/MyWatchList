@@ -72,3 +72,14 @@ app.get("/", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+
+app.get("/user/:username", async (req, res) => {
+  const username = req.params.username;
+  const response = await withPoolConnection((client) => client.query("SELECT username FROM users WHERE username = $1", [username]));
+  if  (response.rows.length === 0) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+  res.json(response.rows);
+});

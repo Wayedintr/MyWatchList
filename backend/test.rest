@@ -22,3 +22,6 @@ GET http://localhost:3000/logout
 
 ### Protected Route
 GET http://localhost:3000/protected
+
+### 
+GET http://localhost:3000/user/bedirhan

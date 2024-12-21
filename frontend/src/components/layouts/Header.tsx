@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {ModeToggle} from "@/components/mode-toggle";
 import { Input } from "@/components/ui/input"
+import { Button } from "../ui/button";
 
 export function Header() {
   return (
@@ -45,7 +46,9 @@ export function Header() {
           <AvatarImage src="https://avatars.githubusercontent.com/u/76536654?v=4" />
           <AvatarFallback>BY</AvatarFallback>
         </Avatar>
-        
+        <Button asChild>
+          <Link to="/login">Login</Link>
+        </Button>
       </div>
 
       

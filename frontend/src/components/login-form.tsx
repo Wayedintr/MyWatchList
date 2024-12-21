@@ -4,19 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   const [mail, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+    
     try {
       const response = await fetch("http://localhost:3000/login", {
         // Updated URL
@@ -36,6 +37,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       const data = await response.json();
       if (response.ok) {
         console.log("Login successful:", data.message);
+        navigate("/");
       } else {
         console.error(data.message);
       }
