@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 
+
 interface Movie {
   id: number;
   title: string;
@@ -11,6 +12,7 @@ interface Movie {
 export default function Dashboard() {
   const [info, setInfo] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);

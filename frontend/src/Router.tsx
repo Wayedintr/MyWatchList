@@ -7,6 +7,8 @@ import Empty from "./pages/Empty";
 import Sample from "./pages/Sample";
 import Register from "./pages/Register";
 import User from "./pages/User";
+import Show from "./pages/Show";
+import Search from "./pages/Search";
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +30,18 @@ export const router = createBrowserRouter([
       {
         path: "user/:username",
         element: <User />,
+      },
+      {
+        path: "show/movie/:show_id",
+        element: <Show is_movie={true} />,
+      },
+      {
+        path: "show/tv/:show_id",
+        element: <Show is_movie={false} />,
+      },
+      {
+        path: "search/:query",
+        element: <Search />,
       },
     ],
   },

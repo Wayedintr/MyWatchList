@@ -81,5 +81,59 @@ app.get("/user/:username", async (req, res) => {
     res.status(404).json({ message: "User not found" });
     return;
   }
-  res.json(response.rows);
+  res.json(response.rows[0]);
 });
+
+app.get("/show/:type/:id", async (req, res) => {
+
+  let show = {};   
+
+  const type = req.params.type;
+  const id = req.params.id;
+  await insertShowById(id, type === "movie");
+  let response = await withPoolConnection((client) => client.query("SELECT * FROM shows WHERE is_movie = $1 AND show_id = $2", [type === "movie", id]));
+  if  (response.rows.length === 0) {
+    res.status(404).json({ message: "Show not found" });
+    return;
+  }
+  show = response.rows[0];
+  response = await withPoolConnection((client) => client.query("SELECT * FROM seasons WHERE show_id = $1", [id]));
+  if  (response.rows.length !== 0) {
+    show.seasons = response.rows;
+    show.seasons.forEach((season) => season.episodes = []);
+    response = await withPoolConnection((client) => client.query("SELECT * FROM episodes WHERE show_id = $1", [id]));
+    if  (response.rows.length !== 0) {
+      response.rows.forEach((episode) => {
+        show.seasons.find((season) => season.season_number === episode.season_number).episodes.push(episode);
+      })
+    }
+  }
+  res.json(show);
+});
+
+
+app.get("/search/", async (req, res) => {
+  const apiKey = "c8a5dcf600f29bb2715cc66262fb3186";
+  const { query, is_movie } = req.query;
+  const url = "https://api.themoviedb.org/3/search/" + (is_movie === "true" ? "movie" : "tv");
+  const params = {
+    include_adult: false,
+    language: "en-US",
+    page: 1,
+    api_key: apiKey,
+    query,
+  };
+
+  try {
+    console.log("Making request to:", url);
+    const response = await axios.get(url, { params });
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error details:", {
+      message: error.message,
+    });
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+

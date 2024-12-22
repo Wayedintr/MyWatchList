@@ -25,3 +25,10 @@ GET http://localhost:3000/protected
 
 ### 
 GET http://localhost:3000/user/bedirhan
+###
+GET http://localhost:3000/show/tv/30984
+###
+GET http://localhost:3000/search?query=Naruto&is_movie=false
+
+### 
+GET http://localhost:3000/show/movie/438631

@@ -10,9 +10,14 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {ModeToggle} from "@/components/mode-toggle";
 import { Input } from "@/components/ui/input"
+import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
+import { useState } from "react";
 
 export function Header() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
   return (
     <header className="supports-backdrop-blur:bg-background/60 sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur md:px-64 px-8 py-3 flex justify-between">
       <img src={icon} className="w-10"></img>
@@ -39,8 +44,10 @@ export function Header() {
       <div className="flex gap-2">
         <ModeToggle/>
         <form action="/" method="get" className="flex gap-2">
-          <Input type="search" name="query" placeholder="Search" className="w-full" />
-          <button type="submit" className="text-primary">Search</button>
+          <Input type="search" name="query" placeholder="Search" className="w-full" value={query} onChange={(e) => setQuery(e.target.value)}/>
+          <button type="button" className="text-primary" onClick={() => {
+            navigate(`/search/${encodeURIComponent(query)}`);
+          }} >Search</button>
         </form>
         <Avatar>
           <AvatarImage src="https://avatars.githubusercontent.com/u/76536654?v=4" />
