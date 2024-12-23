@@ -56,8 +56,7 @@ const createDatabase = async () => {
 // Function to create the tables
 const createTables = async () => {
   // Create tables
-  const createTablesQuery = `
-      CREATE TABLE IF NOT EXISTS users (
+  const createTablesQuery = `CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(255) NOT NULL,
   password VARCHAR(255) NOT NULL,
@@ -103,7 +102,6 @@ CREATE TABLE IF NOT EXISTS show_genres (
 );
 
 CREATE TABLE IF NOT EXISTS seasons (
-  id SERIAL PRIMARY KEY,
   show_id INT,
   is_movie BOOLEAN,
   FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE,
@@ -113,11 +111,11 @@ CREATE TABLE IF NOT EXISTS seasons (
   overview VARCHAR(1000),
   poster_path VARCHAR(255),
   season_number INT,
-  vote_average FLOAT
+  vote_average FLOAT,
+  PRIMARY KEY (show_id, is_movie, season_number)
 );
 
 CREATE TABLE IF NOT EXISTS episodes (
-  id SERIAL PRIMARY KEY,
   show_id INT,
   is_movie BOOLEAN,
   name VARCHAR(255),
@@ -130,7 +128,8 @@ CREATE TABLE IF NOT EXISTS episodes (
   season_number INT,
   runtime INT,
   still_path VARCHAR(255),
-  UNIQUE (show_id, is_movie, season_number, episode_number)
+  UNIQUE (show_id, is_movie, season_number, episode_number),
+  PRIMARY KEY (show_id, is_movie, season_number, episode_number)
 );
 
 CREATE TABLE IF NOT EXISTS user_shows (
@@ -166,8 +165,7 @@ CREATE TABLE IF NOT EXISTS show_comments (
   comment VARCHAR(1000),
   PRIMARY KEY (show_id, is_movie, user_id),
   FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE
-);
-    `;
+);`;
 
   await withPoolConnection(async (client) => {
     await client.query(createTablesQuery);
@@ -373,13 +371,13 @@ const insertShowById = async (showId, is_movie) => {
             poster_path, season_number, vote_average
           )
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-          ON CONFLICT (id) DO UPDATE SET
-            air_date = COALESCE(EXCLUDED.air_date, seasons.air_date),
-            episode_count = COALESCE(EXCLUDED.episode_count, seasons.episode_count),
-            name = COALESCE(EXCLUDED.name, seasons.name),
-            overview = COALESCE(EXCLUDED.overview, seasons.overview),
-            poster_path = COALESCE(EXCLUDED.poster_path, seasons.poster_path),
-            vote_average = COALESCE(EXCLUDED.vote_average, seasons.vote_average);
+          ON CONFLICT (show_id, is_movie, season_number) DO UPDATE SET
+              air_date = EXCLUDED.air_date,
+              episode_count = EXCLUDED.episode_count,
+              name = EXCLUDED.name,
+              overview = EXCLUDED.overview,
+              poster_path = EXCLUDED.poster_path,
+              vote_average = EXCLUDED.vote_average
         `;
           await client.query(insertSeasonQuery, [
             showId,

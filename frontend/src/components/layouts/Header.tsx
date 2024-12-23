@@ -49,10 +49,10 @@ export function Header() {
             navigate(`/search/${encodeURIComponent(query)}`);
           }} >Search</button>
         </form>
-        <Avatar>
+        {/*<Avatar>
           <AvatarImage src="https://avatars.githubusercontent.com/u/76536654?v=4" />
           <AvatarFallback>BY</AvatarFallback>
-        </Avatar>
+        </Avatar></header>*/}
         <Button asChild>
           <Link to="/login">Login</Link>
         </Button>
