@@ -121,7 +121,13 @@ export default function Search() {
   return (
     <div className="flex flex-col items-center mt-8">
       <h1 className="text-xl font-bold mb-4">Search for Movies or TV Shows</h1>
-      <div className="flex items-center mb-4">
+      <form
+        className="flex items-center mb-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSearch();
+        }}
+      >
         <Input
           type="text"
           value={searchRequest.query || ""}
@@ -132,7 +138,7 @@ export default function Search() {
         <Button onClick={handleSearch} disabled={loading}>
           {loading ? "Searching..." : "Search"}
         </Button>
-      </div>
+      </form>
       <RadioGroup
         defaultValue={searchRequest.type}
         onValueChange={(value) => setSearchRequest({ ...searchRequest, type: value === "movie" ? "movie" : "tv" })}

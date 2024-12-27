@@ -15,16 +15,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import icon from "@/icon.jpg";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Input } from "@/components/ui/input";
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-provider";
-import { Bolt, BookOpen, ChevronDown, Layers2, LogOut, Pin, UserPen } from "lucide-react";
+import { ArrowRight, Bolt, BookOpen, ChevronDown, Layers2, LogOut, Pin, Search, UserPen } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function Header() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
   return (
@@ -52,24 +53,38 @@ export function Header() {
       </NavigationMenu>
       <div className="flex gap-2">
         <ModeToggle />
-        <form action={`/search?query=${encodeURIComponent(query)}`} method="get" className="flex gap-2">
-          <Input
-            type="search"
-            name="query"
-            placeholder="Search"
-            className="w-full"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <button
-            type="button"
-            className="text-primary"
-            onClick={() => {
-              window.location.replace(`/search?query=${encodeURIComponent(query)}`);
-            }}
-          >
-            Search
-          </button>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            navigate(`/search?query=${encodeURIComponent(query)}`);
+          }}
+          className="flex gap-2"
+        >
+          <div className="space-y-2 w-60">
+            <div className="relative">
+              <Input
+                id="input-26"
+                className="peer pe-9 ps-9"
+                placeholder="Search..."
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-muted-foreground/80 peer-disabled:opacity-50">
+                <Search size={16} strokeWidth={2} />
+              </div>
+              {query && (
+                <button
+                  className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 outline-offset-2 transition-colors hover:text-foreground focus:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Submit search"
+                  type="button"
+                  onClick={() => navigate(`/search?query=${encodeURIComponent(query)}`)}
+                >
+                  <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
         </form>
         {/*<Avatar>
           <AvatarImage src="https://avatars.githubusercontent.com/u/76536654?v=4" />
