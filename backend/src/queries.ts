@@ -2,6 +2,7 @@ import axios from "axios";
 import { Client, PoolClient } from "pg";
 import { withPoolConnection } from "./db";
 import { Episode, Season } from "@shared/types/show";
+import TTLCache from "@isaacs/ttlcache";
 
 type ShowData = {
   show_id: number;
@@ -26,6 +27,13 @@ type ShowData = {
   number_of_episodes: number | null;
   number_of_seasons: number | null;
 };
+
+// Configure the LRU cache
+const showTimeouts = new TTLCache({
+  ttl: 10 * 60 * 1000, // 10 minutes
+  max: 100000, // 100.000 * 8bytes = 800MB
+  noUpdateTTL: true,
+});
 
 export const createDatabase = async (): Promise<void> => {
   const adminClient = new Client({ database: "postgres" });
@@ -231,6 +239,11 @@ const insertEpisodesBySeason = async (showId: number, seasonNumber: number, is_m
 };
 
 export const insertShowById = async (showId: number, is_movie: boolean): Promise<void> => {
+  if (showTimeouts.has(showId)) {
+    console.log(`[INFO] Show ID ${showId} is in timeout, skipping...`);
+    return;
+  }
+
   await withPoolConnection(async (client: PoolClient) => {
     try {
       await client.query("SELECT status FROM shows WHERE show_id = $1 AND is_movie = $2", [showId, is_movie]);
@@ -426,6 +439,7 @@ export const insertShowById = async (showId: number, is_movie: boolean): Promise
         console.log(`[SUCCESS] Seasons and episodes for show ID ${showId} processed successfully.`);
       }
 
+      showTimeouts.set(showId, true);
       console.log(`[SUCCESS] Show with ID ${showId} inserted successfully.`);
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
