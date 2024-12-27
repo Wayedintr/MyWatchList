@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -20,7 +20,7 @@ export default function Search() {
   const [searchRequest, setSearchRequest] = useState<SearchRequestType>({
     query: params.get("query") || "",
     type: params.get("type") === "movie" ? "movie" : "tv",
-    page: Number(params.get("page")) || undefined,
+    page: Number(params.get("page")) || 1,
   });
   const [result, setResult] = useState({} as SearchApiResponse);
 
@@ -33,7 +33,7 @@ export default function Search() {
     setSearchRequest({
       query: params.get("query") || "",
       type: params.get("type") === "movie" ? "movie" : "tv",
-      page: Number(params.get("page")) || undefined,
+      page: Number(params.get("page")) || 1,
     });
 
     handleSearch();
@@ -44,7 +44,6 @@ export default function Search() {
     setLoading(true);
     setError(null);
 
-    // Set query params of the current window
     const searchParams = new URLSearchParams();
     Object.entries(searchRequest).forEach(([key, value]) => {
       if (value) {
@@ -53,7 +52,7 @@ export default function Search() {
     });
     window.history.replaceState({}, "", `?${searchParams.toString()}`);
 
-    searchApi({ query: searchRequest.query, type: searchRequest.type } as SearchRequestType)
+    searchApi(searchRequest)
       .then((response: SearchResponse) => {
         if (response.result) {
           setResult(response.result);
@@ -75,6 +74,49 @@ export default function Search() {
   const handleNavigate = (type: "movie" | "tv", id: number) => {
     navigate(`/show/${type}/${id}`);
   };
+
+  const handlePaginationClick = (page: number) => {
+    setSearchRequest({ ...searchRequest, page });
+  };
+
+  const getVisiblePages = (current: number, total: number) => {
+    const pages = [];
+    const visibleRange = 2; // Number of pages to show before/after the current page
+
+    // Always include the first page
+    pages.push(1);
+
+    // Add ellipsis if the range doesn't include the second page
+    if (current - visibleRange > 2) {
+      pages.push("...");
+    }
+
+    // Add pages around the current page
+    for (let i = Math.max(2, current - visibleRange); i <= Math.min(total - 1, current + visibleRange); i++) {
+      pages.push(i);
+    }
+
+    // Add ellipsis if the range doesn't include the second-to-last page
+    if (current + visibleRange < total - 1) {
+      pages.push("...");
+    }
+
+    // Always include the last page
+    if (total > 1) {
+      pages.push(total);
+    }
+
+    return pages;
+  };
+
+  useEffect(() => {
+    handleSearch();
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [searchRequest.page]);
 
   return (
     <div className="flex flex-col items-center mt-8">
@@ -108,7 +150,7 @@ export default function Search() {
 
       {error && <p className="text-red-500 mt-4">{error}</p>}
 
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {result?.results &&
           result.results.map((result) => (
             <div
@@ -126,19 +168,37 @@ export default function Search() {
             </div>
           ))}
       </div>
+
       <Pagination>
         <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious href="#" />
+          <PaginationItem
+            className={`cursor-pointer select-none ${result.page === 1 ? "opacity-50 pointer-events-none" : ""}`}
+          >
+            <PaginationPrevious onClick={() => handlePaginationClick(result.page - 1 >= 1 ? result.page - 1 : 1)} />
           </PaginationItem>
-          <PaginationItem>
-            <PaginationLink href="#">1</PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationEllipsis />
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationNext href="#" />
+          {getVisiblePages(result.page, result.total_pages).map((page, index) =>
+            page === "..." ? (
+              <PaginationItem key={`ellipsis-${index}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={page} className="cursor-pointer select-none">
+                <PaginationLink isActive={page === result.page} onClick={() => handlePaginationClick(page as number)}>
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            )
+          )}
+          <PaginationItem
+            className={`cursor-pointer select-none ${
+              result.page === result.total_pages ? "opacity-50 pointer-events-none" : ""
+            }`}
+          >
+            <PaginationNext
+              onClick={() =>
+                handlePaginationClick(result.page + 1 <= result.total_pages ? result.page + 1 : result.total_pages)
+              }
+            />
           </PaginationItem>
         </PaginationContent>
       </Pagination>

@@ -11,6 +11,7 @@ import {
 } from "@shared/types/show";
 import { insertShowById } from "./queries";
 import axios from "axios";
+import { removeUndefined } from "./utils";
 
 export const showRouter = express.Router();
 
@@ -54,7 +55,7 @@ showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
 });
 
 showRouter.get("/search", async (req: Request, res: Response<SearchResponse>) => {
-  const params = req.query as unknown as SearchRequest;
+  const params = removeUndefined(req.query as unknown as SearchRequest);
 
   if (!params.type || !params.query) {
     return res.status(400).json({ message: "Type and query are required" });
