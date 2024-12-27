@@ -5,45 +5,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/auth-provider";
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   const [mail, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch("http://localhost:3000/login", {
-        // Updated URL
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ mail, password }),
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const { message } = await response.json();
-        throw new Error(message || "Failed to login");
-      }
-
-      const data = await response.json();
-      if (response.ok) {
-        console.log("Login successful:", data.message);
-        navigate("/");
-      } else {
-        console.error(data.message);
-      }
-      // Handle successful login (e.g., save token, redirect user)
+      await login({ mail, password });
+      navigate("/");
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Failed to login");
     } finally {
       setLoading(false);
     }

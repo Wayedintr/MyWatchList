@@ -1,5 +1,5 @@
 ### Register a New User
-POST http://localhost:3000/register
+POST http://localhost:3000/auth/register
 Content-Type: application/json
 
 {
@@ -9,7 +9,7 @@ Content-Type: application/json
 }
 
 ### Login with the New User
-POST http://localhost:3000/login
+POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
@@ -18,17 +18,24 @@ Content-Type: application/json
 }
 
 ### Logout
-GET http://localhost:3000/logout
+GET http://localhost:3000/auth/logout
 
 ### Protected Route
 GET http://localhost:3000/protected
 
 ### 
-GET http://localhost:3000/user/bedirhan
+GET http://localhost:3000/user/info
+Content-Type: application/json
+
+{
+    "username": "John Doe"
+}
+
 ###
-GET http://localhost:3000/show/tv/30984
-###
-GET http://localhost:3000/search?query=Naruto&is_movie=false
+GET http://localhost:3000/show/info?type=tv&show_id=1247
 
 ### 
-GET http://localhost:3000/show/movie/438631
+GET http://localhost:3000/show/info?type=movie&show_id=438631
+
+###
+GET http://localhost:3000/show/search?query=Naruto&type=tv

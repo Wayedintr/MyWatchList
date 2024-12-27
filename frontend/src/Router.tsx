@@ -40,9 +40,13 @@ export const router = createBrowserRouter([
         element: <Show is_movie={false} />,
       },
       {
-        path: "search/:query",
+        path: "search",
         element: <Search />,
       },
+      {
+        path: "*",
+        element: <NoMatch />,
+      }
     ],
   },
   {

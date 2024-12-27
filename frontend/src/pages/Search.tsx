@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -12,37 +12,67 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { search as searchApi } from "@/lib/api";
+import { SearchApiResponse, SearchRequest as SearchRequestType, SearchResponse } from "@shared/types/show";
 
 export default function Search() {
-  const [queryText, setQuery] = useState("");
-  const [is_movie, setIsMovie] = useState(true);
-  const [results, setResults] = useState([]);
+  const [params] = useSearchParams();
+  const [searchRequest, setSearchRequest] = useState<SearchRequestType>({
+    query: params.get("query") || "",
+    type: params.get("type") === "movie" ? "movie" : "tv",
+    page: Number(params.get("page")) || undefined,
+  });
+  const [result, setResult] = useState({} as SearchApiResponse);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
+  useEffect(() => {
+    setSearchRequest({
+      query: params.get("query") || "",
+      type: params.get("type") === "movie" ? "movie" : "tv",
+      page: Number(params.get("page")) || undefined,
+    });
+
+    handleSearch();
+  }, [params]);
+
   const handleSearch = async () => {
-    if (!queryText.trim()) return;
+    if (!searchRequest.query.trim()) return;
     setLoading(true);
     setError(null);
 
-    try {
-      const response = await fetch(
-        `http://localhost:3000/search?query=${encodeURIComponent(queryText)}&is_movie=${is_movie}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch search results");
+    // Set query params of the current window
+    const searchParams = new URLSearchParams();
+    Object.entries(searchRequest).forEach(([key, value]) => {
+      if (value) {
+        searchParams.set(key, String(value));
       }
-      const data = await response.json();
-      setResults(data.results || []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    });
+    window.history.replaceState({}, "", `?${searchParams.toString()}`);
+
+    searchApi({ query: searchRequest.query, type: searchRequest.type } as SearchRequestType)
+      .then((response: SearchResponse) => {
+        if (response.result) {
+          setResult(response.result);
+          setError(null);
+        } else {
+          setResult({} as SearchApiResponse);
+          setError(response.message);
+        }
+      })
+      .catch((error: any) => {
+        setResult({} as SearchApiResponse);
+        setError(error.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
-  const handleNavigate = (id: number, type: "movie" | "tv") => {
+  const handleNavigate = (type: "movie" | "tv", id: number) => {
     navigate(`/show/${type}/${id}`);
   };
 
@@ -52,8 +82,8 @@ export default function Search() {
       <div className="flex items-center mb-4">
         <Input
           type="text"
-          value={queryText}
-          onChange={(e) => setQuery(e.target.value)}
+          value={searchRequest.query || ""}
+          onChange={(e) => setSearchRequest({ ...searchRequest, query: e.target.value })}
           placeholder="Enter movie or TV show name"
           className="w-[40rem] mr-4"
         />
@@ -62,8 +92,8 @@ export default function Search() {
         </Button>
       </div>
       <RadioGroup
-        defaultValue={"movie"}
-        onValueChange={(value) => setIsMovie(value === "movie")}
+        defaultValue={searchRequest.type}
+        onValueChange={(value) => setSearchRequest({ ...searchRequest, type: value === "movie" ? "movie" : "tv" })}
         className="flex space-x-4"
       >
         <label className="flex items-center space-x-2">
@@ -79,21 +109,22 @@ export default function Search() {
       {error && <p className="text-red-500 mt-4">{error}</p>}
 
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {results.map((result: any) => (
-          <div
-            key={result.id}
-            className="p-4 border rounded cursor-pointer"
-            onClick={() => handleNavigate(result.id, is_movie ? "movie" : "tv")}
-          >
-            <img
-              src={`https://image.tmdb.org/t/p/w200${result.poster_path}`}
-              alt={result.title || result.name}
-              className="mb-2"
-            />
-            <h2 className="font-bold">{result.title || result.name}</h2>
-            <p>{result.release_date || result.first_air_date}</p>
-          </div>
-        ))}
+        {result?.results &&
+          result.results.map((result) => (
+            <div
+              key={result.id}
+              className="p-4 border rounded cursor-pointer"
+              onClick={() => handleNavigate(searchRequest.type, result.id)}
+            >
+              <img
+                src={`https://image.tmdb.org/t/p/w200${result.poster_path}`}
+                alt={result.title || result.name}
+                className="mb-2"
+              />
+              <h2 className="font-bold">{result.title || result.name}</h2>
+              <p>{result.release_date || result.first_air_date}</p>
+            </div>
+          ))}
       </div>
       <Pagination>
         <PaginationContent>

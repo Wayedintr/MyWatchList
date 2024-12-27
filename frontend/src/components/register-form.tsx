@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/auth-provider";
 
 export function RegisterForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   const [username, setUsername] = useState("");
@@ -12,6 +13,7 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -20,31 +22,10 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:3000/register", {
-        // Updated URL
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, mail, password }),
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const { message } = await response.json();
-        throw new Error(message || "Failed to register");
-      }
-
-      const data = await response.json();
-      if (response.ok) {
-        console.log("Register successful:", data.message);
-        navigate("/");
-      } else {
-        console.error(data.message);
-      }
-      // Handle successful register (e.g., save token, redirect user)
+      await register({ mail, password, username });
+      navigate("/");
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Failed to login");
     } finally {
       setLoading(false);
     }
