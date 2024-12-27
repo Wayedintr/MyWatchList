@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Client, PoolClient } from "pg";
 import { withPoolConnection } from "./db";
+import { Episode, Season } from "@shared/types/show";
 
 type ShowData = {
   show_id: number;
@@ -176,41 +177,48 @@ const insertEpisodesBySeason = async (showId: number, seasonNumber: number, is_m
     const response = await axios.get(apiUrl);
     const seasonData = response.data;
 
-    for (const episode of seasonData.episodes) {
-      const insertEpisodeQuery = `
-        INSERT INTO episodes (
-          show_id, is_movie, name, overview, vote_average, vote_count,
-          air_date, episode_number, season_number, runtime, still_path
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        ON CONFLICT (show_id, is_movie, season_number, episode_number) DO UPDATE SET
-          name = COALESCE(EXCLUDED.name, episodes.name),
-          overview = COALESCE(EXCLUDED.overview, episodes.overview),
-          vote_average = COALESCE(EXCLUDED.vote_average, episodes.vote_average),
-          vote_count = COALESCE(EXCLUDED.vote_count, episodes.vote_count),
-          air_date = COALESCE(EXCLUDED.air_date, episodes.air_date),
-          runtime = COALESCE(EXCLUDED.runtime, episodes.runtime),
-          still_path = COALESCE(EXCLUDED.still_path, episodes.still_path);
-      `;
-
-      const episodeValues = [
-        showId,
-        is_movie,
-        episode.name,
-        episode.overview,
-        episode.vote_average,
-        episode.vote_count,
-        episode.air_date,
-        episode.episode_number,
-        seasonNumber,
-        episode.runtime,
-        episode.still_path,
-      ];
-
-      await withPoolConnection(async (client: PoolClient) => {
-        await client.query(insertEpisodeQuery, episodeValues);
-      });
+    if (!seasonData.episodes || seasonData.episodes.length === 0) {
+      console.warn(`[WARN] No episodes found for show ID ${showId}, season ${seasonNumber}.`);
+      return;
     }
+
+    const values = seasonData.episodes
+      .map(
+        (episode: Episode) => `(
+          ${showId},
+          ${is_movie},
+          ${episode.name ? `'${episode.name.replace(/'/g, "''")}'` : "NULL"},
+          ${episode.overview ? `'${episode.overview.replace(/'/g, "''")}'` : "NULL"},
+          ${episode.vote_average || "NULL"},
+          ${episode.vote_count || "NULL"},
+          ${episode.air_date ? `'${episode.air_date}'` : "NULL"},
+          ${episode.episode_number},
+          ${seasonNumber},
+          ${episode.runtime || "NULL"},
+          ${episode.still_path ? `'${episode.still_path.replace(/'/g, "''")}'` : "NULL"}
+        )`
+      )
+      .join(", ");
+
+    const insertEpisodeQuery = `
+      INSERT INTO episodes (
+        show_id, is_movie, name, overview, vote_average, vote_count,
+        air_date, episode_number, season_number, runtime, still_path
+      )
+      VALUES ${values}
+      ON CONFLICT (show_id, is_movie, season_number, episode_number) DO UPDATE SET
+        name = COALESCE(EXCLUDED.name, episodes.name),
+        overview = COALESCE(EXCLUDED.overview, episodes.overview),
+        vote_average = COALESCE(EXCLUDED.vote_average, episodes.vote_average),
+        vote_count = COALESCE(EXCLUDED.vote_count, episodes.vote_count),
+        air_date = COALESCE(EXCLUDED.air_date, episodes.air_date),
+        runtime = COALESCE(EXCLUDED.runtime, episodes.runtime),
+        still_path = COALESCE(EXCLUDED.still_path, episodes.still_path);
+    `;
+
+    await withPoolConnection(async (client: PoolClient) => {
+      await client.query(insertEpisodeQuery);
+    });
 
     console.log(`[SUCCESS] Episodes for show ID ${showId}, season ${seasonNumber} inserted successfully.`);
   } catch (err: any) {
@@ -225,6 +233,8 @@ const insertEpisodesBySeason = async (showId: number, seasonNumber: number, is_m
 export const insertShowById = async (showId: number, is_movie: boolean): Promise<void> => {
   await withPoolConnection(async (client: PoolClient) => {
     try {
+      await client.query("SELECT status FROM shows WHERE show_id = $1 AND is_movie = $2", [showId, is_movie]);
+
       const apiUrl = `https://api.themoviedb.org/3/${is_movie ? "movie" : "tv"}/${showId}?api_key=${
         process.env.TMDB_API_KEY
       }`;
@@ -322,54 +332,98 @@ export const insertShowById = async (showId: number, is_movie: boolean): Promise
 
       await client.query(insertShowQuery, insertShowValues);
 
-      if (show.genres) {
-        for (const genre of show.genres) {
-          const insertGenreQuery = `
-          INSERT INTO genres (id, name)
-          VALUES ($1, $2)
-          ON CONFLICT (id) DO NOTHING
-          `;
-          await client.query(insertGenreQuery, [genre.id, genre.name]);
+      if (show.genres && show.genres.length > 0) {
+        // Batch insert into genres table
+        const genresValues = show.genres
+          .map((genre: any) => `(${genre.id}, '${genre.name.replace(/'/g, "''")}')`)
+          .join(", ");
 
-          const insertShowGenreQuery = `
+        const insertGenresQuery = `
+          INSERT INTO genres (id, name)
+          VALUES ${genresValues}
+          ON CONFLICT (id) DO NOTHING;
+        `;
+
+        // Batch insert into show_genres table
+        const showGenresValues = show.genres.map((genre: any) => `(${showId}, ${is_movie}, ${genre.id})`).join(", ");
+
+        const insertShowGenresQuery = `
           INSERT INTO show_genres (show_id, is_movie, genre_id)
-          VALUES ($1, $2, $3)
-          ON CONFLICT DO NOTHING
-          `;
-          await client.query(insertShowGenreQuery, [showId, is_movie, genre.id]);
-        }
+          VALUES ${showGenresValues}
+          ON CONFLICT DO NOTHING;
+        `;
+
+        await withPoolConnection(async (client: PoolClient) => {
+          // Execute both batch queries
+          if (genresValues) {
+            await client.query(insertGenresQuery);
+          }
+          if (showGenresValues) {
+            await client.query(insertShowGenresQuery);
+          }
+        });
+
+        console.log(`[SUCCESS] Genres and show genres for show ID ${showId} inserted successfully.`);
       }
 
-      if (!is_movie && show.seasons) {
-        for (const season of show.seasons) {
-          const insertSeasonQuery = `
+      if (!is_movie && show.seasons && show.seasons.length > 0) {
+        // Prepare batched insert for seasons
+        const seasonsValues = show.seasons
+          .map(
+            (season: Season) =>
+              `(${showId}, ${is_movie}, ${season.air_date ? `'${season.air_date}'` : "NULL"}, ${
+                season.episode_count || "NULL"
+              }, ${season.name ? `'${season.name.replace(/'/g, "''")}'` : "NULL"}, ${
+                season.overview ? `'${season.overview.replace(/'/g, "''")}'` : "NULL"
+              }, ${season.poster_path ? `'${season.poster_path.replace(/'/g, "''")}'` : "NULL"}, ${
+                season.season_number
+              }, ${season.vote_average || "NULL"})`
+          )
+          .join(", ");
+
+        const insertSeasonsQuery = `
           INSERT INTO seasons (
             show_id, is_movie, air_date, episode_count, name, overview,
             poster_path, season_number, vote_average
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          VALUES ${seasonsValues}
           ON CONFLICT (show_id, is_movie, season_number) DO UPDATE SET
-            air_date = EXCLUDED.air_date,
-            episode_count = EXCLUDED.episode_count,
-            name = EXCLUDED.name,
-            overview = EXCLUDED.overview,
-            poster_path = EXCLUDED.poster_path,
-            vote_average = EXCLUDED.vote_average
-          `;
-          await client.query(insertSeasonQuery, [
-            showId,
-            is_movie,
-            season.air_date,
-            season.episode_count,
-            season.name,
-            season.overview,
-            season.poster_path,
-            season.season_number,
-            season.vote_average,
-          ]);
+            air_date = COALESCE(EXCLUDED.air_date, seasons.air_date),
+            episode_count = COALESCE(EXCLUDED.episode_count, seasons.episode_count),
+            name = COALESCE(EXCLUDED.name, seasons.name),
+            overview = COALESCE(EXCLUDED.overview, seasons.overview),
+            poster_path = COALESCE(EXCLUDED.poster_path, seasons.poster_path),
+            vote_average = COALESCE(EXCLUDED.vote_average, seasons.vote_average);
+        `;
 
-          await insertEpisodesBySeason(showId, season.season_number, is_movie);
+        const lastSeason = show.seasons.reduce((prev: any, curr: any) =>
+          prev.season_number > curr.season_number ? prev : curr
+        );
+
+        // Check if all seasons are already inserted
+        const result = await client.query(`SELECT COUNT(*) FROM seasons WHERE show_id = $1 AND is_movie = $2`, [
+          showId,
+          is_movie,
+        ]);
+        const insertedSeasonsCount = parseInt(result.rows[0].count, 10);
+
+        // Insert or update seasons
+        await client.query(insertSeasonsQuery);
+
+        if (insertedSeasonsCount === show.seasons.length) {
+          // Only insert episodes for the last season if all seasons are already inserted
+          console.log(`[INFO] All seasons for show ID ${showId} are already inserted.`);
+          console.log(`[INFO] Processing episodes for the last season: ${lastSeason.season_number}.`);
+          await insertEpisodesBySeason(showId, lastSeason.season_number, is_movie);
+        } else {
+          // Insert episodes for all seasons
+          console.log(`[INFO] Inserting episodes for all seasons of show ID ${showId}.`);
+          for (const season of show.seasons) {
+            await insertEpisodesBySeason(showId, season.season_number, is_movie);
+          }
         }
+
+        console.log(`[SUCCESS] Seasons and episodes for show ID ${showId} processed successfully.`);
       }
 
       console.log(`[SUCCESS] Show with ID ${showId} inserted successfully.`);

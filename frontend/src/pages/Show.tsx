@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/Combobox";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,14 @@ export default function Show({ is_movie }: ShowProps) {
   const [selectedSeason, setSelectedSeason] = useState<string | null>("");
   const [episodeProgress, setEpisodeProgress] = useState<number>(0);
 
+  // Ref to prevent duplicate fetches
+  const hasFetched = useRef(false);
+
   useEffect(() => {
+    // Prevent duplicate fetches
+    if (hasFetched.current || !show_id) return;
+
+    hasFetched.current = true;
     setLoading(true);
 
     showApi({ show_id: show_id ? show_id : -1, type: is_movie ? "movie" : "tv" } as ShowRequest)
@@ -35,15 +42,13 @@ export default function Show({ is_movie }: ShowProps) {
         }
       })
       .catch((err) => {
-        setError(err);
+        setError(err.message || "An error occurred");
         setData(null);
       })
       .finally(() => {
         setLoading(false);
       });
   }, [show_id, is_movie]);
-
-  //--------------------------------------------------------------When I refraesh the page, the data inserted 2 times---------------------------------------------------------------
 
   if (loading) {
     return <p>Loading...</p>;
@@ -147,7 +152,7 @@ export default function Show({ is_movie }: ShowProps) {
           ></Combobox>
         )}
 
-        {selectedSeason !== "" ? (
+        {selectedSeason !== "" && (
           <div>
             {/* Episode Tracker */}
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -195,7 +200,7 @@ export default function Show({ is_movie }: ShowProps) {
               </button>
             </div>
           </div>
-        ) : null}
+        )}
       </CardContent>
     </Card>
   );
