@@ -21,6 +21,7 @@ export interface Show {
   number_of_episodes: number | null;
   number_of_seasons: number | null;
 
+  genres: string[];
   seasons: Season[];
 }
 

@@ -97,6 +97,9 @@ export default function Show({ is_movie }: ShowProps) {
         <p>
           <strong>Origin Country:</strong> {data.origin_country}
         </p>
+        <p>
+          <strong>Genres:</strong> {data.genres.join(", ")}
+        </p>
 
         <Combobox
           initialValue={"Plan To Watch"}

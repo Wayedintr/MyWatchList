@@ -33,6 +33,18 @@ showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
 
   let show = response.rows[0];
 
+  // Fetch genres for the show
+  response = await withPoolConnection((client) =>
+    client.query(
+      `SELECT genres.name 
+       FROM show_genres 
+       JOIN genres ON show_genres.genre_id = genres.id 
+       WHERE show_genres.show_id = $1 AND show_genres.is_movie = $2`,
+      [show_id, type === "movie"]
+    )
+  );
+  show.genres = response.rows.map((row) => row.name);
+
   if (type === "tv") {
     response = await withPoolConnection((client) =>
       client.query("SELECT * FROM seasons WHERE show_id = $1", [show_id])
