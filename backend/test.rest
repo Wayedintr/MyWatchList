@@ -1,19 +1,19 @@
-### Register a New User
+### Register
 POST http://localhost:3000/auth/register
 Content-Type: application/json
 
 {
-    "username": "John Doe",
+    "username": "john_doe",
     "password": "password123",
-    "mail": "eM2dR@example.com"
+    "mail": "doe.jhon@example.com"
 }
 
-### Login with the New User
+### Login
 POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "mail": "eM2dR@example.com",
+    "mail": "doe.jhon@example.com",
     "password": "password123"
 }
 
@@ -23,19 +23,20 @@ GET http://localhost:3000/auth/logout
 ### Protected Route
 GET http://localhost:3000/protected
 
-### 
-GET http://localhost:3000/user/info
-Content-Type: application/json
+### Logged In User Info
+GET http://localhost:3000/auth/me
 
-{
-    "username": "John Doe"
-}
+### Public User Info
+GET http://localhost:3000/user/info?username=john_doe
 
-###
-GET http://localhost:3000/show/info?type=tv&show_id=1247
+### Show Info (TV)
+GET http://localhost:3000/show/info?type=tv&show_id=1396
 
-### 
-GET http://localhost:3000/show/info?type=movie&show_id=438631
+### Show Info (Movie)
+GET http://localhost:3000/show/info?type=movie&show_id=550
 
-###
-GET http://localhost:3000/show/search?query=Naruto&type=tv
+### Show Search
+GET http://localhost:3000/show/search?query=Bleach&type=movie
+
+### Show Search (Page 2)
+GET http://localhost:3000/show/search?query=Bleach&type=movie&page=2

@@ -26,7 +26,7 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
 };
 
 // Login Function
-authRouter.post("/login", async (req: Request<{}, {}, LoginRequest>, res: Response<LoginResponse>) => {
+authRouter.post("/login", async (req: Request<LoginRequest>, res: Response<LoginResponse>) => {
   const { mail, password } = req.body;
 
   if (!mail || !password) {
@@ -75,7 +75,7 @@ authRouter.post("/login", async (req: Request<{}, {}, LoginRequest>, res: Respon
 });
 
 // Register Function
-authRouter.post("/register", async (req: Request<{}, {}, RegisterRequest>, res: Response<LoginResponse>) => {
+authRouter.post("/register", async (req: Request<RegisterRequest>, res: Response<LoginResponse>) => {
   const { username, password, mail } = req.body;
 
   if (!username || !password || !mail) {
@@ -136,7 +136,7 @@ authRouter.get("/logout", (req: Request, res: Response) => {
   res.status(200).json({ message: "Logged out successfully." });
 });
 
-// Example of a Protected Route
+// Retrieve logged in user information
 authRouter.get("/me", async (req: Request, res: Response<UserResponse>) => {
   const token = req.cookies?.authToken;
   if (!token) {

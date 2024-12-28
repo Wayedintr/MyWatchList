@@ -1,6 +1,6 @@
 import "dotenv/config";
-import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
+import express, { Express, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { createDatabase, createTables } from "./queries";
