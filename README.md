@@ -37,7 +37,7 @@ A project that helps you manage and explore your watchlist.
 
 5. To run the backend in production mode:
    ```bash
-   yarn start
+   yarn build && yarn start
    ```
 
 ---
