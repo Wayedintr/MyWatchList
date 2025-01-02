@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-provider";
-import { ArrowRight, Bolt, BookOpen, ChevronDown, Layers2, LogOut, Pin, Search, UserPen } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, Layers2, LogOut, Pin, Search, User, UserPen } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function Header() {
@@ -98,6 +98,7 @@ export function Header() {
 
 function UserDropdown() {
   const { user, logout, loading } = useAuth();
+  const navigate = useNavigate();
 
   if (user === null || loading) {
     return (
@@ -125,9 +126,9 @@ function UserDropdown() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem className="flex items-center gap-2">
-            <Bolt size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
-            <span>Option 1</span>
+          <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate(`user/${user.username}`)}>
+            <User size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
+            <span>My Profile</span>
           </DropdownMenuItem>
           <DropdownMenuItem className="flex items-center gap-2">
             <Layers2 size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
