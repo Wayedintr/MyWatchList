@@ -38,3 +38,4 @@ export interface JWTPayload {
   id: string;
   mail: string;
 }
+

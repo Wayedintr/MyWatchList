@@ -1,5 +1,5 @@
 import { LoginRequest, LoginResponse, RegisterRequest, UserPublicResponse, UserResponse } from "@shared/types/auth";
-import { SearchRequest, SearchResponse, ShowRequest, ShowResponse } from "@shared/types/show";
+import { ListGetRequest, ListGetResponse, ListRequest, ListResponse, SearchRequest, SearchResponse, ShowRequest, ShowResponse } from "@shared/types/show";
 
 const API_BASE_URL = process.env.API_URL || "http://localhost:3000"; // Default to empty string if not set
 
@@ -73,4 +73,12 @@ export const show = async (showRequest: ShowRequest): Promise<ShowResponse> => {
 
 export const search = async (searchRequest: SearchRequest): Promise<SearchResponse> => {
   return apiRequest<SearchResponse>(`/show/search`, "GET", searchRequest);
+};
+
+export const list = async (listRequest: ListRequest): Promise<ListResponse> => {
+  return apiRequest<ListResponse>(`/show/list`, "POST", listRequest);
+};
+
+export const listget = async (listGetRequest: ListGetRequest): Promise<ListGetResponse> => {
+  return apiRequest<ListGetResponse>(`/show/listget`, "GET", listGetRequest);
 };

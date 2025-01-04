@@ -40,3 +40,18 @@ GET http://localhost:3000/show/search?query=Bleach&type=movie
 
 ### Show Search (Page 2)
 GET http://localhost:3000/show/search?query=Bleach&type=movie&page=2
+
+### List Add
+POST http://localhost:3000/show/list
+Content-Type: application/json
+
+{
+    "show_id": "30984",
+    "is_movie": false,
+    "list_type": "Watching",
+    "season_number": 1,
+    "episode_number": 40,
+    "score": 7
+}
+### List Get
+GET http://localhost:3000/show/listget?show_id=30984&is_movie=false

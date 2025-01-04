@@ -76,3 +76,31 @@ export interface SearchApiResponse {
   total_pages: number;
   total_results: number;
 }
+
+export interface ListRequest {
+  show_id: number;
+  is_movie: boolean;
+  list_type: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null;
+  season_number: number | null;
+  episode_number: number | null;
+  score: number | null;
+}
+
+export interface ListResponse {
+  message: string;
+}
+
+export interface ListGetRequest {
+  show_id: number;
+  is_movie: boolean;
+}
+
+export interface ListGetResponse {
+  message: string;
+  show_id?: number;
+  is_movie?: boolean;
+  list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null;
+  season_number?: number | null;
+  episode_number?: number | null;
+  score?: number | null;
+}

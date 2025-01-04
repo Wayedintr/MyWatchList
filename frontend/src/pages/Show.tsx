@@ -4,8 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/Combobox";
 import { Input } from "@/components/ui/input";
-import { show as showApi } from "@/lib/api";
-import { Show as ShowType, ShowRequest, ShowResponse } from "@shared/types/show";
+import { list, listget, show as showApi } from "@/lib/api";
+import { Show as ShowType, ShowRequest, ShowResponse, ListGetRequest, ListGetResponse } from "@shared/types/show";
 
 interface ShowProps {
   is_movie: boolean;
@@ -16,7 +16,9 @@ export default function Show({ is_movie }: ShowProps) {
   const [data, setData] = useState<ShowType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<
+    "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null
+  >(null);
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<string | null>("");
   const [episodeProgress, setEpisodeProgress] = useState<number>(0);
@@ -25,29 +27,48 @@ export default function Show({ is_movie }: ShowProps) {
   const hasFetched = useRef(false);
 
   useEffect(() => {
+    if(!loading){
+      list({
+      show_id: show_id ? parseInt(show_id) : -1,
+      is_movie: is_movie,
+      list_type: selectedType,
+      season_number: selectedSeason ? parseInt(selectedSeason) : null,
+      episode_number: episodeProgress,
+      score: selectedScore,
+      });
+    }
+  }, [selectedType, selectedScore, selectedSeason, episodeProgress]);
+
+  useEffect(() => {
     // Prevent duplicate fetches
     if (hasFetched.current || !show_id) return;
 
     hasFetched.current = true;
     setLoading(true);
 
-    showApi({ show_id: show_id ? show_id : -1, type: is_movie ? "movie" : "tv" } as ShowRequest)
-      .then((response: ShowResponse) => {
-        if (response.show) {
-          setData(response.show);
-          setError(null);
-        } else {
-          setData(null);
-          setError(response.message);
-        }
-      })
-      .catch((err) => {
-        setError(err.message || "An error occurred");
+    Promise.all([showApi({ show_id: show_id ? show_id : -1, type: is_movie ? "movie" : "tv" } as ShowRequest), listget({ show_id: show_id ? parseInt(show_id) : -1, is_movie: is_movie })])
+    .then((responses) => {
+      if (responses[0].show) {
+        setData(responses[0].show);
+        setError(null);
+      } else {
         setData(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+        setError(responses[0].message);
+      }
+      if (responses[1]) {
+        setSelectedType(responses[1].list_type || null);
+        setSelectedScore(responses[1].score || null);
+        setSelectedSeason(responses[1].season_number ? responses[1].season_number.toString() : null);
+        setEpisodeProgress(responses[1].episode_number || 0);
+      };
+      setLoading(false);
+    }).catch((err) => {
+      setError(err.message || "An error occurred");
+      setData(null);
+      setLoading(false);
+    }).finally(() => {
+      setLoading(false);
+    })
   }, [show_id, is_movie]);
 
   if (loading) {

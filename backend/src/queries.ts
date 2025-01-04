@@ -140,6 +140,8 @@ export const createTables = async (): Promise<void> => {
     is_movie BOOLEAN,
     FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE,
     list_type VARCHAR(255),
+    season_number INT,
+    episode_number INT,
     score INT,
     PRIMARY KEY (user_id, show_id, is_movie)
   );

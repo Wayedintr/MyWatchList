@@ -8,12 +8,21 @@ import {
   SearchRequest,
   SearchResponse,
   SearchApiResponse,
+  ListRequest,
+  ListResponse,
+  ListGetRequest,
+  ListGetResponse,
 } from "@shared/types/show";
 import { insertShowById } from "./queries";
 import axios from "axios";
 import { removeUndefined } from "./utils";
+import { authenticateToken } from "./auth";
+import { JWTPayload } from "@shared/types/auth";
+import jwt from "jsonwebtoken";
 
 export const showRouter = express.Router();
+
+const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
 
 showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
   const { type, show_id } = req.query as unknown as ShowRequest;
@@ -93,5 +102,75 @@ showRouter.get("/search", async (req: Request, res: Response<SearchResponse>) =>
       message: error.message,
     });
     res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+showRouter.post("/list", async (req: Request<{}, {}, ListRequest>, res: Response<ListResponse>) => {
+  const token = req.cookies?.authToken;
+  const { show_id, is_movie, list_type, season_number, episode_number, score } = req.body;
+
+  if (!token) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+    const listInsertQuery = `INSERT INTO user_shows (user_id, show_id, is_movie, list_type, season_number, episode_number, score) VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ON CONFLICT (user_id, show_id, is_movie) DO UPDATE SET 
+    list_type = EXCLUDED.list_type, 
+    season_number = EXCLUDED.season_number, 
+    episode_number = EXCLUDED.episode_number, 
+    score = EXCLUDED.score;`;
+
+    const listResult = await withPoolConnection((client) =>
+      client.query(listInsertQuery, [decoded.id, show_id, is_movie, list_type, season_number, episode_number, score])
+    );
+
+    if (listResult.rowCount === 0) {
+      return res.status(409).json({ message: "Post has already added to the list" });
+    }
+
+    return res.status(200).json({ message: "Post added to the list" });
+  } catch (err) {
+    console.error("Error verifying token:", err);
+    res.status(403).json({ message: "Invalid token" });
+  }
+});
+
+showRouter.get("/listget", async (req: Request<{}, {}, ListGetRequest>, res: Response<ListGetResponse>) => {
+  const token = req.cookies?.authToken;
+  const params = removeUndefined(req.query as unknown as ListGetRequest);
+
+  if (!token) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+    const listInsertQuery = `SELECT * FROM user_shows WHERE user_id = $1 AND show_id = $2 AND is_movie = $3`;
+
+    const listResult = await withPoolConnection((client) =>
+      client.query(listInsertQuery, [decoded.id, params.show_id, params.is_movie])
+    );
+
+    if (listResult.rowCount === 0) {
+      return res.status(200).json({ message: "No entry" });
+    }
+
+    return res.status(200).json({
+      message: "Get operation has been completed",
+      show_id: listResult.rows[0].show_id,
+      is_movie: listResult.rows[0].is_movie,
+      list_type: listResult.rows[0].list_type,
+      season_number: listResult.rows[0].season_number,
+      episode_number: listResult.rows[0].episode_number,
+      score: listResult.rows[0].score,
+    });
+
+  } catch (err) {
+    console.error("Error verifying token:", err);
+    res.status(403).json({ message: "Invalid token" });
   }
 });
