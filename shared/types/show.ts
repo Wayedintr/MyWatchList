@@ -104,3 +104,44 @@ export interface ListGetResponse {
   episode_number?: number | null;
   score?: number | null;
 }
+
+export interface userShowRequest {
+  message: string; 
+  username: string;
+}
+
+export interface showShort {
+  show_id: number;
+  is_movie: boolean;
+  poster_path: string | null;
+  title: string | null;
+  list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null;
+  season_number?: number | null;
+  episode_number?: number | null;
+  score?: number | null;
+  episode_count?: number | null;
+}
+
+export interface userShowResponse {
+  message: string;
+  show_list?: showShort[];
+}
+
+export interface userStatsResponse {
+  message: string;
+  stats?: userStats;
+}
+
+export interface userStatsRequest {
+  username: string;
+}
+
+export interface userStats {
+  watching_count: number;
+  completed_count: number;
+  dropped_count: number;
+  on_hold_count: number;
+  plan_to_watch_count: number;
+  total_entries: number;
+  total_episodes_watched: number;
+}

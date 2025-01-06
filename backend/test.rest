@@ -3,9 +3,9 @@ POST http://localhost:3000/auth/register
 Content-Type: application/json
 
 {
-    "username": "john_doe",
-    "password": "password123",
-    "mail": "doe.jhon@example.com"
+    "username": "abc",
+    "password": "abc",
+    "mail": "abc@gmail.com"
 }
 
 ### Login
@@ -13,8 +13,8 @@ POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "mail": "doe.jhon@example.com",
-    "password": "password123"
+    "mail": "abc@gmail.com",
+    "password": "abc"
 }
 
 ### Logout
@@ -55,3 +55,9 @@ Content-Type: application/json
 }
 ### List Get
 GET http://localhost:3000/show/listget?show_id=30984&is_movie=false
+
+### Show list get in user page
+GET http://localhost:3000/user/shows?username=abc
+
+### User stats 
+GET http://localhost:3000/user/statistics?username=abc

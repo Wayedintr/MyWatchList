@@ -1,4 +1,4 @@
-import { NavLink, useParams } from "react-router-dom";
+import { Link, NavLink, useParams } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,12 +6,17 @@ import { Label } from "@/components/ui/label";
 import { useEffect } from "react";
 import { useState } from "react";
 import { UserPublic as UserType } from "@shared/types/auth";
-import { user as userApi } from "@/lib/api";
+import { user as userApi, usershows, userstats } from "@/lib/api";
+import { showShort, userShowRequest, userStats, userStatsRequest, userStatsResponse } from "@shared/types/show";
+import UserStatsChart from "@/components/user-stats-chart";
+
 
 export default function User() {
   const { username } = useParams<{ username: string }>();
   const [user, setUser] = useState({} as UserType);
   const [error, setError] = useState<boolean | null>(false);
+  const [ShowList, setShowList] = useState<showShort[]>([]);
+  const [stats, setStats] = useState({} as userStats);
 
   useEffect(() => {
     if (!username) return;
@@ -31,7 +36,27 @@ export default function User() {
       }
     };
 
+    const fetchShows = async () => {
+      const showRes = await usershows({ username } as userShowRequest);
+      if (showRes.show_list) {
+        setShowList(showRes.show_list);
+      } else {
+        setShowList([]);
+      }
+    };
+
+    const fetchStats = async () => {
+      const statsRes = await userstats({ username } as userStatsRequest);
+      if (statsRes.stats) {
+        setStats(statsRes.stats);
+      } else {
+        setStats({} as userStats);
+      }
+    };
+
+    fetchStats();
     fetchUser();
+    fetchShows();
   }, [username]);
 
   if (error) {
@@ -63,10 +88,41 @@ export default function User() {
             <Label>{user?.username?.substring(0, 2)}</Label>
           </AvatarFallback>
         </Avatar>
+        <UserStatsChart username={user.username}>
+          
+        </UserStatsChart>
+        {ShowList.map((show) => (
+          <ShowCard key={show.show_id} show={show} />
+        ))}
         <Button variant="outline" className="mt-4 w-full">
           Follow
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+function ShowCard({ show }: { show: showShort }) {
+  if (!show.poster_path || !show.title || !show.show_id) {
+    return JSON.stringify(show);
+  }
+  const type = show.is_movie ? "movie" : "tv";
+  const id = show.show_id;
+
+  return (
+    <div className="max-h-36 flex gap-5 py-5">
+      <img src={`https://image.tmdb.org/t/p/w200${show.poster_path}`} alt={show.title} className="m-0 h-36" />
+      <div>
+        <Link to={`/show/${type}/${id}`} className="font-semibold text-lg">
+          {show.title}
+        </Link>
+        <p>{show.list_type}</p>
+        <p>Score:{show.score}</p>
+        <p>Season:{show.season_number}</p>
+        <p>
+          {show.episode_number}/{show.episode_count}
+        </p>
+      </div>
+    </div>
   );
 }

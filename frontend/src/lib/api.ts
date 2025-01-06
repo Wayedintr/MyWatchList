@@ -1,5 +1,5 @@
-import { LoginRequest, LoginResponse, RegisterRequest, UserPublicResponse, UserResponse } from "@shared/types/auth";
-import { ListGetRequest, ListGetResponse, ListRequest, ListResponse, SearchRequest, SearchResponse, ShowRequest, ShowResponse } from "@shared/types/show";
+import { LoginRequest, LoginResponse, RegisterRequest, User, UserPublicResponse, UserResponse } from "@shared/types/auth";
+import { ListGetRequest, ListGetResponse, ListRequest, ListResponse, SearchRequest, SearchResponse, ShowRequest, ShowResponse, userShowRequest, userShowResponse, userStatsRequest, userStatsResponse } from "@shared/types/show";
 
 const API_BASE_URL = process.env.API_URL || "http://localhost:3000"; // Default to empty string if not set
 
@@ -81,4 +81,12 @@ export const list = async (listRequest: ListRequest): Promise<ListResponse> => {
 
 export const listget = async (listGetRequest: ListGetRequest): Promise<ListGetResponse> => {
   return apiRequest<ListGetResponse>(`/show/listget`, "GET", listGetRequest);
+};
+
+export const usershows = async (userShowRequest: userShowRequest): Promise<userShowResponse> => {
+  return apiRequest<userShowResponse>(`/user/shows`, "GET", userShowRequest);
+};
+
+export const userstats = async (userStatsRequest: userStatsRequest): Promise<userStatsResponse> => {
+  return apiRequest<userStatsResponse>(`/user/statistics`, "GET" , userStatsRequest);
 };
