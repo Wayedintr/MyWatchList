@@ -1,15 +1,13 @@
-import { Link, NavLink, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link, NavLink } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useEffect } from "react";
-import { useState } from "react";
-import { UserPublic as UserType } from "@shared/types/auth";
-import { user as userApi, usershows, userstats } from "@/lib/api";
-import { showShort, userShowRequest, userStats, userStatsRequest, userStatsResponse } from "@shared/types/show";
 import UserStatsChart from "@/components/user-stats-chart";
-
+import { UserPublic as UserType } from "@shared/types/auth";
+import { user as userApi, userfollow, usershows, userstats } from "@/lib/api";
+import { showShort, userFollowRequest, userShowRequest, userStats, userStatsRequest } from "@shared/types/show";
 
 export default function User() {
   const { username } = useParams<{ username: string }>();
@@ -17,6 +15,16 @@ export default function User() {
   const [error, setError] = useState<boolean | null>(false);
   const [ShowList, setShowList] = useState<showShort[]>([]);
   const [stats, setStats] = useState({} as userStats);
+  const [isFollowed, setIsFollowed] = useState(false); // State for follow status
+  const [isHovered, setIsHovered] = useState(false); // State for hover status
+
+  const handleFollow = () => {
+    if (!isFollowed) {
+      // Follow the user
+      userfollow({ followed_username: username, is_following: true } as userFollowRequest);
+    }
+    setIsFollowed((prev) => !prev); // Toggle follow status
+  };
 
   useEffect(() => {
     if (!username) return;
@@ -88,14 +96,24 @@ export default function User() {
             <Label>{user?.username?.substring(0, 2)}</Label>
           </AvatarFallback>
         </Avatar>
-        <UserStatsChart username={user.username}>
-          
-        </UserStatsChart>
+        <UserStatsChart username={user.username} />
         {ShowList.map((show) => (
           <ShowCard key={show.show_id} show={show} />
         ))}
-        <Button variant="outline" className="mt-4 w-full">
-          Follow
+        <Button
+          variant={isFollowed ? "default" : "outline"} // Adjust variant dynamically
+          className={`mt-4 w-full ${
+            isFollowed
+              ? isHovered
+                ? "bg-red-500 text-white hover:bg-red-600" // Red for "Unfollow" hover
+                : "bg-green-500 text-white" // Green for "Followed"
+              : "hover:bg-gray-100" // Optional hover effect for "Follow"
+          }`}
+          onClick={handleFollow}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {isFollowed && isHovered ? "Unfollow" : isFollowed ? "Followed" : "Follow"}
         </Button>
       </CardContent>
     </Card>

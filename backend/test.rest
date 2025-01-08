@@ -61,3 +61,13 @@ GET http://localhost:3000/user/shows?username=abc
 
 ### User stats 
 GET http://localhost:3000/user/statistics?username=abc
+
+
+### Follow test 
+POST http://localhost:3000/user/follow
+Content-Type: application/json
+
+{
+    "username":"boran",
+    "followed_username":"abc"
+}

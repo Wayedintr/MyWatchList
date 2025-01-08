@@ -1,7 +1,17 @@
 import express, { Request, Response } from "express";
 import { withPoolConnection } from "./db";
-import { UserPublicResponse } from "@shared/types/auth";
-import { showShort, userShowResponse, userStats, userStatsResponse } from "@shared/types/show";
+import { JWTPayload, UserPublicResponse } from "@shared/types/auth";
+import {
+  showShort,
+  userFollowRequest,
+  userFollowResponse,
+  userShowResponse,
+  userStats,
+  userStatsResponse,
+} from "@shared/types/show";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
 
 export const userRouter = express.Router();
 
@@ -95,10 +105,8 @@ userRouter.get("/shows", async (req: Request, res: Response<userShowResponse>) =
   }
 });
 
-
 userRouter.get("/statistics", async (req: Request, res: Response<userStatsResponse>) => {
-
- try {
+  try {
     const { username } = req.query;
 
     if (!username) {
@@ -110,16 +118,78 @@ userRouter.get("/statistics", async (req: Request, res: Response<userStatsRespon
 
     if (userStatsQueryResult.rows.length === 0) {
       return res.status(404).json({ message: "User not found" });
-    } 
+    }
 
     return res.status(200).json({
       message: "User statistics found successfully.",
-      stats: userStatsQueryResult.rows[0] as unknown as userStats
+      stats: userStatsQueryResult.rows[0] as unknown as userStats,
     });
   } catch (error) {
     console.error("Error fetching user statistics:", error);
     res.status(500).json({ message: "Error fetching user statistics" });
   }
+});
 
+userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: Response<userFollowResponse>) => {
+  const token = req.cookies?.authToken;
+  const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
+  if (!token) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  const { followed_username: followed_username, is_following: is_following } = req.body;
+
+  if (is_following) {
+    try {
+      const selectFollowedUserQuery = `SELECT id FROM users WHERE username = $1`;
+      const followedUseridResult = await withPoolConnection((client) =>
+        client.query(selectFollowedUserQuery, [followed_username])
+      );
+
+      const followerId = decoded.id;
+      const followId = followedUseridResult.rows[0].id;
+
+      const deleteFollowQuery = `DELETE FROM user_follows WHERE user_id = $1 AND follow_id = $2`;
+      const followResult = await withPoolConnection((client) =>
+        client.query(deleteFollowQuery, [followerId, followId])
+      );
+
+      if (followResult.rowCount === 0) {
+        return res.status(500).json({ message: "Error unfollowing user" });
+      }
+
+      console.log("FOLLOWED USER ID", followerId, "FOLLOWING USER ID", followId);
+      return res.status(200).json({ message: "User unfollowed successfully." });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      res.status(500).json({ message: "Error unfollowing user" });
+    }
+
+  } else {
+    try {
+      const selectFollowedUserQuery = `SELECT id FROM users WHERE username = $1`;
+      const followedUseridResult = await withPoolConnection((client) =>
+        client.query(selectFollowedUserQuery, [followed_username])
+      );
+
+      const followerId = decoded.id;
+      const followId = followedUseridResult.rows[0].id;
+
+      const insertFollowQuery = `INSERT INTO user_follows(user_id, follow_id) VALUES ($1, $2)`;
+      const followResult = await withPoolConnection((client) =>
+        client.query(insertFollowQuery, [followerId, followId])
+      );
+
+      if (followResult.rowCount === 0) {
+        return res.status(500).json({ message: "Error following user" });
+      }
+
+      console.log("FOLLOWED USER ID", followerId, "FOLLOWING USER ID", followId);
+      return res.status(200).json({ message: "User followed successfully." });
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).json({ message: "Error following user" });
+    }
+  }
 });

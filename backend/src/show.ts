@@ -24,6 +24,7 @@ export const showRouter = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
 
+
 showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
   const { type, show_id } = req.query as unknown as ShowRequest;
 

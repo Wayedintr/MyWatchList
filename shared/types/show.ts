@@ -145,3 +145,12 @@ export interface userStats {
   total_entries: number;
   total_episodes_watched: number;
 }
+
+export interface userFollowRequest {
+  followed_username: string;
+  is_following: boolean;
+}
+
+export interface userFollowResponse {
+  message: string;
+}
