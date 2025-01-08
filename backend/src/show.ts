@@ -108,7 +108,9 @@ showRouter.get("/search", async (req: Request, res: Response<SearchResponse>) =>
 
 showRouter.post("/list", async (req: Request<{}, {}, ListRequest>, res: Response<ListResponse>) => {
   const token = req.cookies?.authToken;
-  const { show_id, is_movie, list_type, season_number, episode_number, score } = req.body;
+  const { show_id, is_movie, user_show_info } = req.body;
+
+  console.log("Received request to add show to list:", { show_id, is_movie, user_show_info });
 
   if (!token) {
     return res.status(401).json({ message: "Not authenticated" });
@@ -125,21 +127,29 @@ showRouter.post("/list", async (req: Request<{}, {}, ListRequest>, res: Response
     score = EXCLUDED.score;`;
 
     const listResult = await withPoolConnection((client) =>
-      client.query(listInsertQuery, [decoded.id, show_id, is_movie, list_type, season_number, episode_number, score])
+      client.query(listInsertQuery, [
+        decoded.id,
+        show_id,
+        is_movie,
+        user_show_info.list_type ?? null,
+        user_show_info.season_number === "" ? null : user_show_info.season_number,
+        user_show_info.episode_number === "" ? null : user_show_info.episode_number,
+        user_show_info.score === "" ? null : user_show_info.score,
+      ])
     );
 
     if (listResult.rowCount === 0) {
-      return res.status(409).json({ message: "Post has already added to the list" });
+      return res.status(409).json({ message: "There was an error adding the show to the list" });
     }
 
     return res.status(200).json({ message: "Post added to the list" });
-  } catch (err) {
-    console.error("Error verifying token:", err);
+  } catch (err: any) {
+    console.error("Error adding list: " + err.message + ' "' + user_show_info.score + '"');
     res.status(403).json({ message: "Invalid token" });
   }
 });
 
-showRouter.get("/listget", async (req: Request<{}, {}, ListGetRequest>, res: Response<ListGetResponse>) => {
+showRouter.get("/listget", async (req: Request, res: Response<ListGetResponse>) => {
   const token = req.cookies?.authToken;
   const params = removeUndefined(req.query as unknown as ListGetRequest);
 
@@ -162,14 +172,13 @@ showRouter.get("/listget", async (req: Request<{}, {}, ListGetRequest>, res: Res
 
     return res.status(200).json({
       message: "Get operation has been completed",
-      show_id: listResult.rows[0].show_id,
-      is_movie: listResult.rows[0].is_movie,
-      list_type: listResult.rows[0].list_type,
-      season_number: listResult.rows[0].season_number,
-      episode_number: listResult.rows[0].episode_number,
-      score: listResult.rows[0].score,
+      show_user_info: {
+        list_type: listResult.rows[0].list_type,
+        season_number: listResult.rows[0].season_number,
+        episode_number: listResult.rows[0].episode_number,
+        score: listResult.rows[0].score,
+      },
     });
-
   } catch (err) {
     console.error("Error verifying token:", err);
     res.status(403).json({ message: "Invalid token" });

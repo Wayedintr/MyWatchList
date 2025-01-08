@@ -131,6 +131,7 @@ userRouter.get("/statistics", async (req: Request, res: Response<userStatsRespon
 });
 
 userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: Response<userFollowResponse>) => {
+  console.log("FOLLOW REQUEST", req.body);
   const token = req.cookies?.authToken;
   const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 

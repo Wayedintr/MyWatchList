@@ -134,10 +134,14 @@ function ShowCard({ show }: { show: showShort }) {
         <Link to={`/show/${type}/${id}`} className="font-semibold text-lg">
           {show.title}
         </Link>
+        {/*@ts-ignore */}
         <p>{show.list_type}</p>
+        {/*@ts-ignore */}
         <p>Score:{show.score}</p>
+        {/*@ts-ignore */}
         <p>Season:{show.season_number}</p>
         <p>
+          {/*@ts-ignore */}
           {show.episode_number}/{show.episode_count}
         </p>
       </div>

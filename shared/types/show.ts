@@ -77,19 +77,26 @@ export interface SearchApiResponse {
   total_results: number;
 }
 
+export interface UserShowInfo {
+  list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null;
+  season_number?: number | null | "";
+  episode_number?: number | null | "";
+  score?: number | null | "";
+  episode_count?: number | null | "";
+}
+
+// List post
 export interface ListRequest {
   show_id: number;
   is_movie: boolean;
-  list_type: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null;
-  season_number: number | null;
-  episode_number: number | null;
-  score: number | null;
+  user_show_info: UserShowInfo;
 }
 
 export interface ListResponse {
   message: string;
 }
 
+// List get
 export interface ListGetRequest {
   show_id: number;
   is_movie: boolean;
@@ -97,17 +104,7 @@ export interface ListGetRequest {
 
 export interface ListGetResponse {
   message: string;
-  show_id?: number;
-  is_movie?: boolean;
-  list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null;
-  season_number?: number | null;
-  episode_number?: number | null;
-  score?: number | null;
-}
-
-export interface userShowRequest {
-  message: string; 
-  username: string;
+  show_user_info?: UserShowInfo;
 }
 
 export interface showShort {
@@ -115,11 +112,13 @@ export interface showShort {
   is_movie: boolean;
   poster_path: string | null;
   title: string | null;
-  list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null;
-  season_number?: number | null;
-  episode_number?: number | null;
-  score?: number | null;
-  episode_count?: number | null;
+  user_show_info?: UserShowInfo;
+}
+
+// User show list
+export interface userShowRequest {
+  message: string;
+  username: string;
 }
 
 export interface userShowResponse {
@@ -127,6 +126,7 @@ export interface userShowResponse {
   show_list?: showShort[];
 }
 
+// User stats
 export interface userStatsResponse {
   message: string;
   stats?: userStats;

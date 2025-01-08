@@ -12,7 +12,7 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   nothingFoundMessage?: string;
   mandatory?: boolean;
-  initialValue?: any;
+  value: any;
   onChange: (value: any) => void;
   onCollapse?: (value: any) => void;
   onMouseEnter?: (value: any) => void;
@@ -21,16 +21,11 @@ interface ComboboxProps {
 }
 
 export function Combobox(props: ComboboxProps) {
-  const [value, setValue] = React.useState(props.initialValue);
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
-    props.onChange(value);
-  }, [value]);
-
-  React.useEffect(() => {
     if (!open) {
-      props.onCollapse?.(value);
+      props.onCollapse?.(props.value);
     }
   }, [open]);
 
@@ -38,11 +33,13 @@ export function Combobox(props: ComboboxProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" role="combobox" aria-expanded={open} className="justify-between w-[200px]">
-          {value
-            ? props.elements.find((element) => element.value === value)?.label
-            : props.placeholder
-            ? props.placeholder
-            : "Select..."}
+          <span className="truncate">
+            {props.value
+              ? props.elements.find((element) => element.value === props.value)?.label
+              : props.placeholder
+              ? props.placeholder
+              : "Select..."}
+          </span>
           <ChevronsUpDown className="opacity-50 ml-2 w-4 h-4 shrink-0" />
         </Button>
       </PopoverTrigger>
@@ -62,7 +59,8 @@ export function Combobox(props: ComboboxProps) {
                   key={element.value}
                   value={element.value}
                   onSelect={(currentValue) => {
-                    setValue(!props.mandatory && currentValue === value ? "" : currentValue);
+                    const newValue = !props.mandatory && currentValue === props.value ? "" : currentValue;
+                    props.onChange(newValue);
                     setOpen(false);
                   }}
                   onMouseEnter={() => {
@@ -75,7 +73,9 @@ export function Combobox(props: ComboboxProps) {
                   }}
                 >
                   {element.label}
-                  <Check className={cn("ml-auto h-4 w-4", value === element.value ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn("ml-auto h-4 w-4", props.value === element.value ? "opacity-100" : "opacity-0")}
+                  />
                 </CommandItem>
               ))}
             </CommandGroup>
