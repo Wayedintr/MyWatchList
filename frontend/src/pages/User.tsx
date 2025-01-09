@@ -19,10 +19,7 @@ export default function User() {
   const [isHovered, setIsHovered] = useState(false); // State for hover status
 
   const handleFollow = () => {
-    if (!isFollowed) {
-      // Follow the user
-      userfollow({ followed_username: username, is_following: true } as userFollowRequest);
-    }
+    userfollow({ followed_username: username, is_following: isFollowed } as userFollowRequest);
     setIsFollowed((prev) => !prev); // Toggle follow status
   };
 
