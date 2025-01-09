@@ -72,10 +72,8 @@ Content-Type: application/json
     "is_folllowing":false
 }
 
-<<<<<<< Updated upstream
 ### Get activity test
 GET http://localhost:3000/user/activity?username=abc
-=======
+
 ### Follow Test 2
 GET http://localhost:3000/user/follows?username=abc
->>>>>>> Stashed changes

@@ -202,7 +202,6 @@ userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: 
   }
 });
 
-<<<<<<< Updated upstream
 userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityResponse>) => {
   const username = req.query.username as string;
   const offset = parseInt(req.query.offset as string) || 0; // Default to 0 if not provided
@@ -278,7 +277,7 @@ userRouter.delete("/delete-activity", async (req: Request, res: Response<DeleteU
     res.status(500).json({ message: "Error deleting user activity", success: false });
   }
 });
-=======
+
 userRouter.get("/follows", async (req: Request<{}, {}, userFollowsRequest>, res: Response<userFollowsResponse>) => {
   const { username } = req.query;
   const token = req.cookies?.authToken;
@@ -295,7 +294,7 @@ userRouter.get("/follows", async (req: Request<{}, {}, userFollowsRequest>, res:
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
     const selectFollowsQuery = `SELECT user_id, follow_id FROM user_follows WHERE user_id = $1 AND follow_id = $2`;
     const followsResult = await withPoolConnection((client) =>
-      client.query(selectFollowsQuery, [decoded.id,followerUserIdResult.rows[0].id])
+      client.query(selectFollowsQuery, [decoded.id, followerUserIdResult.rows[0].id])
     );
 
     if (followsResult.rows.length === 0) {
@@ -307,7 +306,6 @@ userRouter.get("/follows", async (req: Request<{}, {}, userFollowsRequest>, res:
     }
   } catch (error) {
     console.error("Error fetching user follows:", error);
-    res.status(500).json({ message: "Error fetching user follows", follows: false });  
+    res.status(500).json({ message: "Error fetching user follows", follows: false });
   }
 });
->>>>>>> Stashed changes
