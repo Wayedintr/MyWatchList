@@ -9,7 +9,12 @@ import {
   userStats,
   userStatsResponse,
 } from "@shared/types/show";
-import { GetUserActivityRequest, GetUserActivityResponse, WatchActivity } from "@shared/types/user";
+import {
+  DeleteUserActivityRequest,
+  GetUserActivityRequest,
+  GetUserActivityResponse,
+  WatchActivity,
+} from "@shared/types/user";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
@@ -132,7 +137,6 @@ userRouter.get("/statistics", async (req: Request, res: Response<userStatsRespon
 });
 
 userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: Response<userFollowResponse>) => {
-  console.log("FOLLOW REQUEST", req.body);
   const token = req.cookies?.authToken;
   const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
@@ -197,6 +201,8 @@ userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: 
 
 userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityResponse>) => {
   const username = req.query.username as string;
+  const offset = parseInt(req.query.offset as string) || 0; // Default to 0 if not provided
+  const limit = parseInt(req.query.limit as string) || 10; // Default to 10 if not provided
 
   if (!username) {
     return res.status(400).json({ message: "Username is required" });
@@ -205,23 +211,21 @@ userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityRe
   try {
     // Query to fetch user activity with additional data from shows and episodes
     const selectUserActivityQuery = `
-      SELECT ua.date, ua.list_type, ua.season AS season_number, ua.episode AS episode_number, ua.show_id, ua.is_movie,
+      SELECT ua.date, ua.list_type, ua.season AS season_number, ua.episode AS episode_number, se.name AS season_name, ua.show_id, ua.is_movie,
         COALESCE(e.still_path, s.poster_path) AS image_path, e.name AS episode_name, s.title AS show_name
       FROM user_activity ua
       JOIN users u ON ua.user_id = u.id
       LEFT JOIN shows s ON ua.show_id = s.show_id AND ua.is_movie = s.is_movie
       LEFT JOIN episodes e ON ua.show_id = e.show_id AND ua.is_movie = e.is_movie AND ua.season = e.season_number AND ua.episode = e.episode_number
+      LEFT JOIN seasons se ON e.show_id = se.show_id AND e.season_number = se.season_number
       WHERE u.username = $1
-      ORDER BY ua.date DESC;
+      ORDER BY ua.date DESC
+      LIMIT $2 OFFSET $3;
     `;
 
     const userActivityQueryResult = await withPoolConnection((client) =>
-      client.query(selectUserActivityQuery, [username])
+      client.query(selectUserActivityQuery, [username, limit, offset])
     );
-
-    if (userActivityQueryResult.rows.length === 0) {
-      return res.status(404).json({ message: "User not found or no activity available" });
-    }
 
     return res.status(200).json({
       message: "User activity found successfully.",
@@ -234,6 +238,7 @@ userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityRe
         season_number: row.season_number,
         episode_number: row.episode_number,
         image_path: row.image_path,
+        season_name: row.season_name,
         episode_name: row.episode_name || null,
         show_name: row.show_name || null,
       })),
@@ -241,5 +246,32 @@ userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityRe
   } catch (error) {
     console.error("Error fetching user activity:", error);
     res.status(500).json({ message: "Error fetching user activity" });
+  }
+});
+
+userRouter.delete("/delete-activity", async (req: Request, res: Response) => {
+  console.log("DELETE ACTIVITY", req.query as unknown as DeleteUserActivityRequest);
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+  const { date, show_id, type } = req.query as unknown as DeleteUserActivityRequest;
+
+  try {
+    const deleteActivityQuery = `DELETE FROM user_activity WHERE user_id = $1 AND date = $2 AND show_id = $3 AND is_movie = $4`;
+    const deleteActivityResult = await withPoolConnection((client) =>
+      client.query(deleteActivityQuery, [decoded.id, date, show_id, type === "movie"])
+    );
+    if (deleteActivityResult.rowCount === 0) {
+      console.error(deleteActivityQuery, [decoded.id, date, show_id, type === "movie"]);
+      return res.status(404).json({ message: "User activity not found" });
+    } else {
+      return res.status(200).json({ message: "User activity deleted successfully." });
+    }
+  } catch (error) {
+    console.error("Error deleting user activity:", error);
+    res.status(500).json({ message: "Error deleting user activity" });
   }
 });
