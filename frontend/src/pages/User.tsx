@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import UserStatsChart from "@/components/user-stats-chart";
 import { UserPublic as UserType } from "@shared/types/auth";
-import { user as userApi, userfollow, usershows, userstats } from "@/lib/api";
-import { showShort, userFollowRequest, userShowRequest, userStats, userStatsRequest } from "@shared/types/show";
+import { user as userApi, userfollow, userFollowController, usershows, userstats } from "@/lib/api";
+import { showShort, userFollowRequest, userFollowsRequest, userShowRequest, userStats, userStatsRequest } from "@shared/types/show";
 
 export default function User() {
   const { username } = useParams<{ username: string }>();
@@ -27,7 +27,6 @@ export default function User() {
     if (!username) return;
 
     setError(null);
-
     const fetchUser = async () => {
       try {
         const userRes = await userApi(username);
@@ -58,6 +57,19 @@ export default function User() {
         setStats({} as userStats);
       }
     };
+
+    
+    const checkFollow = async () => {
+      try {
+        const followRes = await userFollowController({ username } as userFollowsRequest);
+        const follows = followRes.follows;
+        setIsFollowed(follows);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    checkFollow();
 
     fetchStats();
     fetchUser();

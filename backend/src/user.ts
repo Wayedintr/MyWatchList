@@ -5,6 +5,8 @@ import {
   showShort,
   userFollowRequest,
   userFollowResponse,
+  userFollowsRequest,
+  userFollowsResponse,
   userShowResponse,
   userStats,
   userStatsResponse,
@@ -200,6 +202,7 @@ userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: 
   }
 });
 
+<<<<<<< Updated upstream
 userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityResponse>) => {
   const username = req.query.username as string;
   const offset = parseInt(req.query.offset as string) || 0; // Default to 0 if not provided
@@ -275,3 +278,36 @@ userRouter.delete("/delete-activity", async (req: Request, res: Response<DeleteU
     res.status(500).json({ message: "Error deleting user activity", success: false });
   }
 });
+=======
+userRouter.get("/follows", async (req: Request<{}, {}, userFollowsRequest>, res: Response<userFollowsResponse>) => {
+  const { username } = req.query;
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.status(401).json({ message: "Not authenticated", follows: false });
+  }
+
+  try {
+    const selectFollowerUserIdQuery = `SELECT id FROM users WHERE username = $1`;
+    const followerUserIdResult = await withPoolConnection((client) =>
+      client.query(selectFollowerUserIdQuery, [username])
+    );
+
+    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const selectFollowsQuery = `SELECT user_id, follow_id FROM user_follows WHERE user_id = $1 AND follow_id = $2`;
+    const followsResult = await withPoolConnection((client) =>
+      client.query(selectFollowsQuery, [decoded.id,followerUserIdResult.rows[0].id])
+    );
+
+    if (followsResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found", follows: false });
+    }
+
+    if (followsResult.rows.length !== 0) {
+      return res.status(200).json({ message: "User follows found successfully.", follows: true });
+    }
+  } catch (error) {
+    console.error("Error fetching user follows:", error);
+    res.status(500).json({ message: "Error fetching user follows", follows: false });  
+  }
+});
+>>>>>>> Stashed changes

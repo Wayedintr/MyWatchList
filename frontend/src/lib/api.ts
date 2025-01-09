@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { LoginRequest, LoginResponse, RegisterRequest, UserPublicResponse, UserResponse } from "@shared/types/auth";
 import {
   DeleteUserActivityRequest,
@@ -21,6 +22,10 @@ import {
   userFollowRequest,
   userFollowResponse,
 } from "@shared/types/show";
+=======
+import { LoginRequest, LoginResponse, RegisterRequest, User, UserPublicResponse, UserResponse } from "@shared/types/auth";
+import { ListGetRequest, ListGetResponse, ListRequest, ListResponse, SearchRequest, SearchResponse, ShowRequest, ShowResponse, userShowRequest, userShowResponse, userStatsRequest, userStatsResponse, userFollowRequest, userFollowResponse, userFollowsRequest, userFollowsResponse } from "@shared/types/show";
+>>>>>>> Stashed changes
 
 const API_BASE_URL = process.env.API_URL || "http://localhost:3000"; // Default to empty string if not set
 
@@ -116,6 +121,7 @@ export const userfollow = async (userFollowRequest: userFollowRequest): Promise<
   return apiRequest<userFollowResponse>(`/user/follow`, "POST", userFollowRequest);
 };
 
+<<<<<<< Updated upstream
 export const userActivity = async (
   getUserActivityRequest: GetUserActivityRequest
 ): Promise<GetUserActivityResponse> => {
@@ -127,3 +133,8 @@ export const deleteUserActivity = async (
 ): Promise<DeleteUserActivityResponse> => {
   return apiRequest<DeleteUserActivityResponse>(`/user/delete-activity`, "DELETE", deleteUserActivityRequest);
 };
+=======
+export const userFollowController = async (userFollowsRequest: userFollowsRequest): Promise<userFollowsResponse> => {
+  return apiRequest<userFollowsResponse>(`/user/follows`, "GET", userFollowsRequest);
+};
+>>>>>>> Stashed changes

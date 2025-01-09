@@ -13,8 +13,8 @@ POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "mail": "abc@gmail.com",
-    "password": "abc"
+    "mail": "boran@gmail.com",
+    "password": "boran"
 }
 
 ### Logout
@@ -72,5 +72,10 @@ Content-Type: application/json
     "is_folllowing":false
 }
 
+<<<<<<< Updated upstream
 ### Get activity test
 GET http://localhost:3000/user/activity?username=abc
+=======
+### Follow Test 2
+GET http://localhost:3000/user/follows?username=abc
+>>>>>>> Stashed changes

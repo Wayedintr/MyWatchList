@@ -154,3 +154,12 @@ export interface userFollowRequest {
 export interface userFollowResponse {
   message: string;
 }
+
+export interface userFollowsResponse {
+  message: string;
+  follows: boolean;
+}
+
+export interface userFollowsRequest {
+  username: string;
+}
