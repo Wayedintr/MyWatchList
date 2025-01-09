@@ -1,5 +1,10 @@
 import { LoginRequest, LoginResponse, RegisterRequest, UserPublicResponse, UserResponse } from "@shared/types/auth";
-import { DeleteUserActivityRequest, GetUserActivityRequest, GetUserActivityResponse } from "@shared/types/user";
+import {
+  DeleteUserActivityRequest,
+  DeleteUserActivityResponse,
+  GetUserActivityRequest,
+  GetUserActivityResponse,
+} from "@shared/types/user";
 import {
   ListGetRequest,
   ListGetResponse,
@@ -119,6 +124,6 @@ export const userActivity = async (
 
 export const deleteUserActivity = async (
   deleteUserActivityRequest: DeleteUserActivityRequest
-): Promise<{ message: string }> => {
-  return apiRequest<{ message: string }>(`/user/delete-activity`, "DELETE", deleteUserActivityRequest);
+): Promise<DeleteUserActivityResponse> => {
+  return apiRequest<DeleteUserActivityResponse>(`/user/delete-activity`, "DELETE", deleteUserActivityRequest);
 };

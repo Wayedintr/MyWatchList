@@ -8,12 +8,14 @@ import { timeAgo } from "@/lib/utils";
 import { Image } from "./skeleton-img";
 import { Ellipsis, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { useAuth } from "@/contexts/auth-provider";
 
 export function UserActivity({
   username,
   className,
   ...props
 }: { username: string } & React.HTMLAttributes<HTMLDivElement>) {
+  const { user } = useAuth();
   const [userActivity, setUserActivity] = useState<WatchActivity[]>([]);
   const [offset, setOffset] = useState(0);
   const limit = 10; // Number of items per page
@@ -73,33 +75,37 @@ export function UserActivity({
             <div className="flex-grow justify-end flex p-2">
               <div className="flex gap-2">
                 <p className="text-muted-foreground text-xs font-semibold">{timeAgo(activity.date)}</p>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size={"icon"}
-                      className="rounded-full w-5 h-5 bg-transparent hover:bg-transparent text-muted-foreground hover:text-foreground"
-                    >
-                      <Ellipsis style={{ strokeWidth: 3 }} />
-                    </Button>
-                  </DropdownMenuTrigger>
+                {username === user?.username && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size={"icon"}
+                        className="rounded-full w-5 h-5 bg-transparent hover:bg-transparent text-muted-foreground hover:text-foreground"
+                      >
+                        <Ellipsis style={{ strokeWidth: 3 }} />
+                      </Button>
+                    </DropdownMenuTrigger>
 
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      className="text-xs font-semibold"
-                      onClick={() => {
-                        deleteUserActivity({
-                          date: activity.date,
-                          show_id: activity.show_id,
-                          type: activity.type,
-                        }).then((res) => {
-                          console.log(res.message);
-                        });
-                      }}
-                    >
-                      <X /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        className="text-xs font-semibold"
+                        onClick={() => {
+                          deleteUserActivity({
+                            activity_id: activity.activity_id,
+                          }).then((res) => {
+                            if (res.success) {
+                              setUserActivity((prev) =>
+                                prev.filter((item) => item.activity_id !== activity.activity_id)
+                              );
+                            }
+                          });
+                        }}
+                      >
+                        <X /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
           </Card>

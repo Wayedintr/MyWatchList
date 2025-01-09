@@ -153,6 +153,7 @@ export const createTables = async (): Promise<void> => {
   );
 
   CREATE TABLE IF NOT EXISTS user_activity (
+    activity_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     show_id INT,
     is_movie BOOLEAN,
@@ -161,7 +162,7 @@ export const createTables = async (): Promise<void> => {
     season INT,
     episode INT,
     FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, show_id, is_movie, date)
+    UNIQUE (user_id, show_id, is_movie, date)
   );
 
   CREATE TABLE IF NOT EXISTS show_comments (

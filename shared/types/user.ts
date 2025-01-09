@@ -1,4 +1,5 @@
 export interface WatchActivity {
+  activity_id: number;
   username: string;
   show_id: number;
   type: "movie" | "tv";
@@ -24,7 +25,10 @@ export interface GetUserActivityResponse {
 }
 
 export interface DeleteUserActivityRequest {
-  show_id: number;
-  type: "movie" | "tv";
-  date: string;
+  activity_id: number;
+}
+
+export interface DeleteUserActivityResponse {
+  message: string;
+  success: boolean;
 }

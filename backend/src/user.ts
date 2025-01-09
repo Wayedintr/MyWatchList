@@ -11,6 +11,7 @@ import {
 } from "@shared/types/show";
 import {
   DeleteUserActivityRequest,
+  DeleteUserActivityResponse,
   GetUserActivityRequest,
   GetUserActivityResponse,
   WatchActivity,
@@ -211,7 +212,7 @@ userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityRe
   try {
     // Query to fetch user activity with additional data from shows and episodes
     const selectUserActivityQuery = `
-      SELECT ua.date, ua.list_type, ua.season AS season_number, ua.episode AS episode_number, se.name AS season_name, ua.show_id, ua.is_movie,
+      SELECT ua.activity_id, ua.date, ua.list_type, ua.season AS season_number, ua.episode AS episode_number, se.name AS season_name, ua.show_id, ua.is_movie,
         COALESCE(e.still_path, s.poster_path) AS image_path, e.name AS episode_name, s.title AS show_name
       FROM user_activity ua
       JOIN users u ON ua.user_id = u.id
@@ -230,6 +231,7 @@ userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityRe
     return res.status(200).json({
       message: "User activity found successfully.",
       activity: userActivityQueryResult.rows.map((row) => ({
+        activity_id: row.activity_id,
         username: username,
         show_id: row.show_id,
         type: row.is_movie ? "movie" : "tv",
@@ -249,29 +251,27 @@ userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityRe
   }
 });
 
-userRouter.delete("/delete-activity", async (req: Request, res: Response) => {
+userRouter.delete("/delete-activity", async (req: Request, res: Response<DeleteUserActivityResponse>) => {
   console.log("DELETE ACTIVITY", req.query as unknown as DeleteUserActivityRequest);
   const token = req.cookies?.authToken;
   if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized", success: false });
   }
   const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
-  const { date, show_id, type } = req.query as unknown as DeleteUserActivityRequest;
+  const { activity_id } = req.query as unknown as DeleteUserActivityRequest;
 
   try {
-    const deleteActivityQuery = `DELETE FROM user_activity WHERE user_id = $1 AND date = $2 AND show_id = $3 AND is_movie = $4`;
+    const deleteActivityQuery = `DELETE FROM user_activity WHERE activity_id = $1 AND user_id = $2`;
     const deleteActivityResult = await withPoolConnection((client) =>
-      client.query(deleteActivityQuery, [decoded.id, date, show_id, type === "movie"])
+      client.query(deleteActivityQuery, [activity_id, decoded.id])
     );
     if (deleteActivityResult.rowCount === 0) {
-      console.error(deleteActivityQuery, [decoded.id, date, show_id, type === "movie"]);
-      return res.status(404).json({ message: "User activity not found" });
-    } else {
-      return res.status(200).json({ message: "User activity deleted successfully." });
+      return res.status(500).json({ message: "Error deleting user activity", success: false });
     }
+    return res.status(200).json({ message: "User activity deleted successfully.", success: true });
   } catch (error) {
     console.error("Error deleting user activity:", error);
-    res.status(500).json({ message: "Error deleting user activity" });
+    res.status(500).json({ message: "Error deleting user activity", success: false });
   }
 });
