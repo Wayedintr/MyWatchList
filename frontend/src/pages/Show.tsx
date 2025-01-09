@@ -144,80 +144,84 @@ export default function Show({ is_movie }: ShowProps) {
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <Label className="font-bold ml-0.5">Season</Label>
-              <Combobox
-                value={userShowInfo.season_number?.toString()}
-                elements={data.seasons.map((season) => ({
-                  value: season.season_number?.toString(),
-                  label: season.name || `Season ${season.season_number}`,
-                }))}
-                onChange={(value) => {
-                  setUserShowInfo({ ...userShowInfo, season_number: value });
-                }}
-                disableSearch
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <Label className="font-bold text-center">Episode</Label>
-              <div className="h-10 gap-2 flex items-center">
-                <button
-                  className="rounded-full h-5 w-5 hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
-                  onClick={() => {
-                    if (userShowInfo.episode_number && userShowInfo.episode_number > 0) {
-                      setUserShowInfo({ ...userShowInfo, episode_number: userShowInfo.episode_number - 1 });
-                    }
-                  }}
-                  disabled={!userShowInfo.season_number}
-                >
-                  <MinusCircle className="w-full h-full" />
-                </button>
-
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={userShowInfo.season_number ? userShowInfo.episode_number?.toString() || 0 : ""}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      if (!isNaN(value)) {
-                        const clamped = Math.min(
-                          value,
-                          data.seasons[Number(userShowInfo.season_number)]?.episode_count || 0
-                        );
-                        setUserShowInfo({ ...userShowInfo, episode_number: clamped });
-                      } else {
-                        setUserShowInfo({ ...userShowInfo, episode_number: null });
-                      }
+            {!is_movie && (
+              <>
+                <div className="flex flex-col gap-1">
+                  <Label className="font-bold ml-0.5">Season</Label>
+                  <Combobox
+                    value={userShowInfo.season_number?.toString()}
+                    elements={data.seasons.map((season) => ({
+                      value: season.season_number?.toString(),
+                      label: season.name || `Season ${season.season_number}`,
+                    }))}
+                    onChange={(value) => {
+                      setUserShowInfo({ ...userShowInfo, season_number: value });
                     }}
-                    className="bg-background w-20 text-left peer pe-9"
-                    disabled={!userShowInfo.season_number}
+                    disableSearch
                   />
-                  <div className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50">
-                    {userShowInfo.season_number &&
-                      "/" + data.seasons[Number(userShowInfo.season_number)]?.episode_count}
-                  </div>
                 </div>
 
-                <button
-                  className="rounded-full h-5 w-5 hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
-                  onClick={() => {
-                    if (
-                      userShowInfo.episode_number &&
-                      userShowInfo.episode_number <
-                        (data.seasons[Number(userShowInfo.season_number)]?.episode_count || Infinity)
-                    ) {
-                      setUserShowInfo({ ...userShowInfo, episode_number: userShowInfo.episode_number + 1 });
-                    } else if (!userShowInfo.episode_number) {
-                      setUserShowInfo({ ...userShowInfo, episode_number: 1 });
-                    }
-                  }}
-                  disabled={!userShowInfo.season_number}
-                >
-                  <PlusCircle className="w-full h-full" />
-                </button>
-              </div>
-            </div>
+                <div className="flex flex-col gap-1">
+                  <Label className="font-bold text-center">Episode</Label>
+                  <div className="h-10 gap-2 flex items-center">
+                    <button
+                      className="rounded-full h-5 w-5 hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+                      onClick={() => {
+                        if (userShowInfo.episode_number && userShowInfo.episode_number > 0) {
+                          setUserShowInfo({ ...userShowInfo, episode_number: userShowInfo.episode_number - 1 });
+                        }
+                      }}
+                      disabled={!userShowInfo.season_number}
+                    >
+                      <MinusCircle className="w-full h-full" />
+                    </button>
+
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={userShowInfo.season_number ? userShowInfo.episode_number?.toString() || 0 : ""}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value)) {
+                            const clamped = Math.min(
+                              value,
+                              data.seasons[Number(userShowInfo.season_number)]?.episode_count || 0
+                            );
+                            setUserShowInfo({ ...userShowInfo, episode_number: clamped });
+                          } else {
+                            setUserShowInfo({ ...userShowInfo, episode_number: null });
+                          }
+                        }}
+                        className="bg-background w-20 text-left peer pe-9"
+                        disabled={!userShowInfo.season_number}
+                      />
+                      <div className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50">
+                        {userShowInfo.season_number &&
+                          "/" + data.seasons[Number(userShowInfo.season_number)]?.episode_count}
+                      </div>
+                    </div>
+
+                    <button
+                      className="rounded-full h-5 w-5 hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+                      onClick={() => {
+                        if (
+                          userShowInfo.episode_number &&
+                          userShowInfo.episode_number <
+                            (data.seasons[Number(userShowInfo.season_number)]?.episode_count || Infinity)
+                        ) {
+                          setUserShowInfo({ ...userShowInfo, episode_number: userShowInfo.episode_number + 1 });
+                        } else if (!userShowInfo.episode_number) {
+                          setUserShowInfo({ ...userShowInfo, episode_number: 1 });
+                        }
+                      }}
+                      disabled={!userShowInfo.season_number}
+                    >
+                      <PlusCircle className="w-full h-full" />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="flex-grow flex justify-end">
               <div className="flex flex-col gap-1">

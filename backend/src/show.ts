@@ -24,7 +24,6 @@ export const showRouter = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
 
-
 showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
   const { type, show_id } = req.query as unknown as ShowRequest;
 
@@ -131,7 +130,7 @@ showRouter.post("/list", async (req: Request<{}, {}, ListRequest>, res: Response
         decoded.id,
         show_id,
         is_movie,
-        user_show_info.list_type ?? null,
+        user_show_info.list_type === "" ? null : user_show_info.list_type,
         user_show_info.season_number === "" ? null : user_show_info.season_number,
         user_show_info.episode_number === "" ? null : user_show_info.episode_number,
         user_show_info.score === "" ? null : user_show_info.score,

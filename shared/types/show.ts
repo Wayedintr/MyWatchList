@@ -78,7 +78,7 @@ export interface SearchApiResponse {
 }
 
 export interface UserShowInfo {
-  list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | null;
+  list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold" | "" | null;
   season_number?: number | null | "";
   episode_number?: number | null | "";
   score?: number | null | "";

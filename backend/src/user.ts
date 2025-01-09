@@ -9,6 +9,7 @@ import {
   userStats,
   userStatsResponse,
 } from "@shared/types/show";
+import { GetUserActivityRequest, GetUserActivityResponse, WatchActivity } from "@shared/types/user";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
@@ -166,7 +167,6 @@ userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: 
       console.error("Error unfollowing user:", error);
       res.status(500).json({ message: "Error unfollowing user" });
     }
-
   } else {
     try {
       const selectFollowedUserQuery = `SELECT id FROM users WHERE username = $1`;
@@ -192,5 +192,54 @@ userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: 
       console.error("Error following user:", error);
       res.status(500).json({ message: "Error following user" });
     }
+  }
+});
+
+userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityResponse>) => {
+  const username = req.query.username as string;
+
+  if (!username) {
+    return res.status(400).json({ message: "Username is required" });
+  }
+
+  try {
+    // Query to fetch user activity with additional data from shows and episodes
+    const selectUserActivityQuery = `
+      SELECT ua.date, ua.list_type, ua.season AS season_number, ua.episode AS episode_number, ua.show_id, ua.is_movie,
+        COALESCE(e.still_path, s.poster_path) AS image_path, e.name AS episode_name, s.title AS show_name
+      FROM user_activity ua
+      JOIN users u ON ua.user_id = u.id
+      LEFT JOIN shows s ON ua.show_id = s.show_id AND ua.is_movie = s.is_movie
+      LEFT JOIN episodes e ON ua.show_id = e.show_id AND ua.is_movie = e.is_movie AND ua.season = e.season_number AND ua.episode = e.episode_number
+      WHERE u.username = $1
+      ORDER BY ua.date DESC;
+    `;
+
+    const userActivityQueryResult = await withPoolConnection((client) =>
+      client.query(selectUserActivityQuery, [username])
+    );
+
+    if (userActivityQueryResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found or no activity available" });
+    }
+
+    return res.status(200).json({
+      message: "User activity found successfully.",
+      activity: userActivityQueryResult.rows.map((row) => ({
+        username: username,
+        show_id: row.show_id,
+        type: row.is_movie ? "movie" : "tv",
+        date: row.date,
+        list_type: row.list_type,
+        season_number: row.season_number,
+        episode_number: row.episode_number,
+        image_path: row.image_path,
+        episode_name: row.episode_name || null,
+        show_name: row.show_name || null,
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching user activity:", error);
+    res.status(500).json({ message: "Error fetching user activity" });
   }
 });

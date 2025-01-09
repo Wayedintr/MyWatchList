@@ -71,3 +71,6 @@ Content-Type: application/json
     "username":"boran",
     "is_folllowing":false
 }
+
+### Get activity test
+GET http://localhost:3000/user/activity?username=abc

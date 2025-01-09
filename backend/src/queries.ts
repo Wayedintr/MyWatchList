@@ -139,7 +139,7 @@ export const createTables = async (): Promise<void> => {
     show_id INT,
     is_movie BOOLEAN,
     FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE,
-    list_type VARCHAR(255),
+    list_type VARCHAR(255) CHECK (list_type IN ('Plan To Watch', 'Watching', 'Completed', 'Dropped', 'On Hold', null)),
     season_number INT,
     episode_number INT,
     score INT,
@@ -156,9 +156,11 @@ export const createTables = async (): Promise<void> => {
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     show_id INT,
     is_movie BOOLEAN,
-    FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE,
-    date DATE,
+    date TIMESTAMP,
+    list_type VARCHAR(255) CHECK (list_type IN ('Plan To Watch', 'Watching', 'Completed', 'Dropped', 'On Hold', null)),
+    season INT,
     episode INT,
+    FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE,
     PRIMARY KEY (user_id, show_id, is_movie, date)
   );
 
@@ -223,6 +225,36 @@ export const createTables = async (): Promise<void> => {
     u.id, u.username;
 
 
+CREATE OR REPLACE FUNCTION log_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Skip if no changes are detected
+    IF NEW = OLD THEN
+        RETURN NULL;
+    END IF;
+
+    -- Handle list type change or "Watching" season/episode changes
+    IF (NEW.list_type != OLD.list_type) OR (OLD.list_type IS NULL AND NEW.list_type IS NOT NULL)
+       OR (NEW.list_type = 'Watching'
+           AND NEW.season_number IS NOT NULL
+           AND NEW.episode_number IS NOT NULL
+           AND (NEW.season_number != OLD.season_number OR NEW.episode_number != OLD.episode_number)) THEN
+
+        INSERT INTO user_activity (user_id, show_id, is_movie, date, list_type, season, episode)
+        VALUES (NEW.user_id, NEW.show_id, NEW.is_movie, CURRENT_TIMESTAMP, NEW.list_type, NEW.season_number, NEW.episode_number)
+        ON CONFLICT (user_id, show_id, is_movie, date) DO NOTHING;
+
+        RETURN NEW;
+    END IF;
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER log_activity
+AFTER INSERT OR UPDATE ON user_shows
+FOR EACH ROW
+EXECUTE FUNCTION log_activity();
   `;
 
   await withPoolConnection(async (client: PoolClient) => {
