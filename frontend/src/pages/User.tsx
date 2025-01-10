@@ -4,11 +4,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import UserStatsChart from "@/components/user-stats-chart";
 import { UserPublic as UserType } from "@shared/types/auth";
 import { user as userApi, userfollow, userFollowController, usershows, userstats } from "@/lib/api";
 import { showShort, userFollowRequest, userFollowsRequest, userShowRequest, userStats, userStatsRequest } from "@shared/types/show";
 import { useAuth } from "@/contexts/auth-provider";
+import { Component as PieChartComponent } from "@/components/user-pie-chart";
+
 
 export default function User() {
   const { username } = useParams<{ username: string }>();
@@ -19,6 +20,7 @@ export default function User() {
   const [isFollowed, setIsFollowed] = useState(false); // State for follow status
   const [isHovered, setIsHovered] = useState(false); // State for hover status
   const { user } = useAuth();
+
   const handleFollow = () => {
     userfollow({ followed_username: username, is_following: isFollowed } as userFollowRequest);
     setIsFollowed((prev) => !prev); // Toggle follow status
@@ -32,7 +34,6 @@ export default function User() {
       try {
         const userRes = await userApi(username);
         if (userRes.user) {
-          console.log(userRes.user); 
           setUser(userRes.user);
         } else {
           setError(true);
@@ -70,6 +71,7 @@ export default function User() {
       }
     };
 
+    console.log(stats);
 
     checkFollow();
     fetchStats();
@@ -106,7 +108,15 @@ export default function User() {
             <Label>{currentUser?.username?.substring(0, 2)}</Label>
           </AvatarFallback>
         </Avatar>
-        <UserStatsChart username={currentUser.username} />
+        <PieChartComponent stats={
+          {
+            watching: stats.watching_count,
+            planToWatch: stats.plan_to_watch_count,
+            completed: stats.completed_count,
+            onHold: stats.on_hold_count,
+            dropped: stats.dropped_count, 
+          }
+        } />
         {ShowList.map((show) => (
           <ShowCard key={show.show_id} show={show} />
         ))}
