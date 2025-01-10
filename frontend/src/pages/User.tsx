@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, Link, NavLink } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -8,16 +8,17 @@ import UserStatsChart from "@/components/user-stats-chart";
 import { UserPublic as UserType } from "@shared/types/auth";
 import { user as userApi, userfollow, userFollowController, usershows, userstats } from "@/lib/api";
 import { showShort, userFollowRequest, userFollowsRequest, userShowRequest, userStats, userStatsRequest } from "@shared/types/show";
+import { useAuth } from "@/contexts/auth-provider";
 
 export default function User() {
   const { username } = useParams<{ username: string }>();
-  const [user, setUser] = useState({} as UserType);
+  const [currentUser, setUser] = useState({} as UserType);
   const [error, setError] = useState<boolean | null>(false);
   const [ShowList, setShowList] = useState<showShort[]>([]);
   const [stats, setStats] = useState({} as userStats);
   const [isFollowed, setIsFollowed] = useState(false); // State for follow status
   const [isHovered, setIsHovered] = useState(false); // State for hover status
-
+  const { user } = useAuth();
   const handleFollow = () => {
     userfollow({ followed_username: username, is_following: isFollowed } as userFollowRequest);
     setIsFollowed((prev) => !prev); // Toggle follow status
@@ -31,6 +32,7 @@ export default function User() {
       try {
         const userRes = await userApi(username);
         if (userRes.user) {
+          console.log(userRes.user); 
           setUser(userRes.user);
         } else {
           setError(true);
@@ -58,7 +60,6 @@ export default function User() {
       }
     };
 
-    
     const checkFollow = async () => {
       try {
         const followRes = await userFollowController({ username } as userFollowsRequest);
@@ -69,8 +70,8 @@ export default function User() {
       }
     };
 
-    checkFollow();
 
+    checkFollow();
     fetchStats();
     fetchUser();
     fetchShows();
@@ -95,35 +96,38 @@ export default function User() {
     <Card>
       <CardHeader>
         <CardTitle>
-          <Label>{user.username}</Label>
+          <Label>{currentUser.username}</Label>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Avatar>
-          <AvatarImage src={`https://github.com/${user.username}.png?size=120`} alt={user.username} />
+          <AvatarImage src={`https://github.com/${currentUser.username}.png?size=120`} alt={currentUser.username} />
           <AvatarFallback>
-            <Label>{user?.username?.substring(0, 2)}</Label>
+            <Label>{currentUser?.username?.substring(0, 2)}</Label>
           </AvatarFallback>
         </Avatar>
-        <UserStatsChart username={user.username} />
+        <UserStatsChart username={currentUser.username} />
         {ShowList.map((show) => (
           <ShowCard key={show.show_id} show={show} />
         ))}
-        <Button
-          variant={isFollowed ? "default" : "outline"} // Adjust variant dynamically
-          className={`mt-4 w-full ${
-            isFollowed
-              ? isHovered
-                ? "bg-red-500 text-white hover:bg-red-600" // Red for "Unfollow" hover
-                : "bg-green-500 text-white" // Green for "Followed"
-              : "hover:bg-gray-100" // Optional hover effect for "Follow"
-          }`}
-          onClick={handleFollow}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          {isFollowed && isHovered ? "Unfollow" : isFollowed ? "Followed" : "Follow"}
-        </Button>
+        {/* Only show the follow button if the viewed profile is not the current user's profile */}
+        {currentUser.username !== user?.username && (
+          <Button
+            variant={isFollowed ? "default" : "outline"} // Adjust variant dynamically
+            className={`mt-4 w-full ${
+              isFollowed
+                ? isHovered
+                  ? "bg-red-500 text-white hover:bg-red-600" // Red for "Unfollow" hover
+                  : "bg-green-500 text-white" // Green for "Followed"
+                : "hover:bg-gray-100" // Optional hover effect for "Follow"
+            }`}
+            onClick={handleFollow}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {isFollowed && isHovered ? "Unfollow" : isFollowed ? "Followed" : "Follow"}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,28 +1,13 @@
-import { LoginRequest, LoginResponse, RegisterRequest, UserPublicResponse, UserResponse } from "@shared/types/auth";
+
 import {
   DeleteUserActivityRequest,
   DeleteUserActivityResponse,
   GetUserActivityRequest,
   GetUserActivityResponse,
 } from "@shared/types/user";
-import {
-  ListGetRequest,
-  ListGetResponse,
-  ListRequest,
-  ListResponse,
-  SearchRequest,
-  SearchResponse,
-  ShowRequest,
-  ShowResponse,
-  userShowRequest,
-  userShowResponse,
-  userStatsRequest,
-  userStatsResponse,
-  userFollowRequest,
-  userFollowResponse,
-  userFollowsResponse,
-  userFollowsRequest,
-} from "@shared/types/show";
+
+import { LoginRequest, LoginResponse, RegisterRequest, User, UserPublicResponse, UserResponse } from "@shared/types/auth";
+import { ListGetRequest, ListGetResponse, ListRequest, ListResponse, SearchRequest, SearchResponse, ShowRequest, ShowResponse, userShowRequest, userShowResponse, userStatsRequest, userStatsResponse, userFollowRequest, userFollowResponse, userFollowsRequest, userFollowsResponse } from "@shared/types/show";
 
 const API_BASE_URL = process.env.API_URL || "http://localhost:3000"; // Default to empty string if not set
 
@@ -117,6 +102,7 @@ export const userstats = async (userStatsRequest: userStatsRequest): Promise<use
 export const userfollow = async (userFollowRequest: userFollowRequest): Promise<userFollowResponse> => {
   return apiRequest<userFollowResponse>(`/user/follow`, "POST", userFollowRequest);
 };
+
 
 export const userActivity = async (
   getUserActivityRequest: GetUserActivityRequest
