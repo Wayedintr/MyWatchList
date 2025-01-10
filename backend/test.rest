@@ -27,7 +27,7 @@ GET http://localhost:3000/protected
 GET http://localhost:3000/auth/me
 
 ### Public User Info
-GET http://localhost:3000/user/info?username=john_doe
+GET http://localhost:3000/user/info?username=abc
 
 ### Show Info (TV)
 GET http://localhost:3000/show/info?type=tv&show_id=1396

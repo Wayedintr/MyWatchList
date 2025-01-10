@@ -14,9 +14,10 @@ export interface WatchActivity {
 }
 
 export interface GetUserActivityRequest {
-  username: string;
+  user_id: number;
+  limit: number;
   offset?: number;
-  limit?: number;
+  include_follows?: string;
 }
 
 export interface GetUserActivityResponse {

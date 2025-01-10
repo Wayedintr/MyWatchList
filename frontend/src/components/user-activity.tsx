@@ -11,21 +11,27 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/contexts/auth-provider";
 
 export function UserActivity({
-  username,
+  user_id,
   className,
+  limit = 10,
+  includeFollows = false,
   ...props
-}: { username: string } & React.HTMLAttributes<HTMLDivElement>) {
+}: { user_id: number; limit?: number; includeFollows?: boolean } & React.HTMLAttributes<HTMLDivElement>) {
   const { user } = useAuth();
   const [userActivity, setUserActivity] = useState<WatchActivity[]>([]);
   const [offset, setOffset] = useState(0);
-  const limit = 10; // Number of items per page
   const [hasMore, setHasMore] = useState(true); // Tracks if more data is available
   const [loading, setLoading] = useState(false); // Tracks loading state
 
   const loadActivities = async (newOffset: number) => {
     setLoading(true);
     try {
-      const res = await userActivityApi({ username, offset: newOffset, limit });
+      const res = await userActivityApi({
+        user_id,
+        offset: newOffset,
+        limit,
+        include_follows: includeFollows ? "true" : "false",
+      });
       if (res.activity) {
         setUserActivity((prev) => [...prev, ...res.activity!]);
         setHasMore(res.activity.length === limit); // Check if more data is available
@@ -39,7 +45,7 @@ export function UserActivity({
 
   useEffect(() => {
     loadActivities(0); // Load initial data
-  }, [username]);
+  }, [user_id]);
 
   const handleLoadMore = () => {
     const newOffset = offset + limit;
@@ -63,7 +69,7 @@ export function UserActivity({
 
             <div className="flex flex-col items-start p-2">
               <Button variant={"link"} className="p-0 h-fit" asChild>
-                <Link to={`/user/${activity.username}`}>{username}</Link>
+                <Link to={`/user/${activity.username}`}>{activity.username}</Link>
               </Button>
 
               <p className="text-muted-foreground text-sm">{activityText(activity)}</p>
@@ -75,7 +81,7 @@ export function UserActivity({
             <div className="flex-grow justify-end flex p-2">
               <div className="flex gap-2">
                 <p className="text-muted-foreground text-xs font-semibold">{timeAgo(activity.date)}</p>
-                {username === user?.username && (
+                {activity.username === user?.username && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

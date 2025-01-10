@@ -8,7 +8,7 @@ export default function Dashboard() {
       {user && (
         <>
           <p className="text-2xl font-bold mb-2">Your Activities</p>
-          <UserActivity username={user?.username!} className="w-1/2" />
+          <UserActivity user_id={user?.id} className="w-1/2" includeFollows={true} />
         </>
       )}
     </div>

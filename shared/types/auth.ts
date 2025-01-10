@@ -15,7 +15,7 @@ export interface RegisterRequest {
 }
 
 export interface User {
-  id: string;
+  id: number;
   mail: string;
   username: string;
 }
@@ -27,6 +27,7 @@ export interface UserResponse {
 
 export interface UserPublic {
   username: string;
+  user_id: number;
 }
 
 export interface UserPublicResponse {
@@ -38,4 +39,3 @@ export interface JWTPayload {
   id: string;
   mail: string;
 }
-

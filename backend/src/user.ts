@@ -32,7 +32,7 @@ userRouter.get("/info", async (req: Request, res: Response<UserPublicResponse>) 
       return res.status(400).json({ message: "Username is required" });
     }
 
-    const selectUserQuery = `SELECT username FROM users WHERE username = $1`;
+    const selectUserQuery = `SELECT username, id AS user_id FROM users WHERE username = $1`;
     const userResult = await withPoolConnection((client) => client.query(selectUserQuery, [username]));
 
     if (userResult.rows.length === 0) {
@@ -203,38 +203,44 @@ userRouter.post("/follow", async (req: Request<{}, {}, userFollowRequest>, res: 
 });
 
 userRouter.get("/activity", async (req: Request, res: Response<GetUserActivityResponse>) => {
-  const username = req.query.username as string;
-  const offset = parseInt(req.query.offset as string) || 0; // Default to 0 if not provided
-  const limit = parseInt(req.query.limit as string) || 10; // Default to 10 if not provided
+  const query = req.query as unknown as GetUserActivityRequest;
+  const user_id = query.user_id;
+  const offset = query.offset || 0; // Default to 0 if not provided
+  const limit = query.limit || 10; // Default to 10 if not provided
+  const include_follows = query.include_follows === "true";
 
-  if (!username) {
-    return res.status(400).json({ message: "Username is required" });
+  console.log("user_id", user_id, "offset", offset, "limit", limit, "include_follows", include_follows);
+
+  if (!user_id) {
+    return res.status(400).json({ message: "user_id is required" });
   }
 
   try {
     // Query to fetch user activity with additional data from shows and episodes
     const selectUserActivityQuery = `
       SELECT ua.activity_id, ua.date, ua.list_type, ua.season AS season_number, ua.episode AS episode_number, se.name AS season_name, ua.show_id, ua.is_movie,
-        COALESCE(e.still_path, s.poster_path) AS image_path, e.name AS episode_name, s.title AS show_name
+        COALESCE(e.still_path, s.poster_path) AS image_path, e.name AS episode_name, s.title AS show_name, u.username
       FROM user_activity ua
       JOIN users u ON ua.user_id = u.id
       LEFT JOIN shows s ON ua.show_id = s.show_id AND ua.is_movie = s.is_movie
       LEFT JOIN episodes e ON ua.show_id = e.show_id AND ua.is_movie = e.is_movie AND ua.season = e.season_number AND ua.episode = e.episode_number
       LEFT JOIN seasons se ON e.show_id = se.show_id AND e.season_number = se.season_number
-      WHERE u.username = $1
+      WHERE u.id = $1 ${
+        include_follows === true ? "OR u.id IN (SELECT follow_id FROM user_follows WHERE user_id = $1)" : ""
+      }
       ORDER BY ua.date DESC
       LIMIT $2 OFFSET $3;
     `;
 
     const userActivityQueryResult = await withPoolConnection((client) =>
-      client.query(selectUserActivityQuery, [username, limit, offset])
+      client.query(selectUserActivityQuery, [user_id, limit, offset])
     );
 
     return res.status(200).json({
       message: "User activity found successfully.",
       activity: userActivityQueryResult.rows.map((row) => ({
         activity_id: row.activity_id,
-        username: username,
+        username: row.username,
         show_id: row.show_id,
         type: row.is_movie ? "movie" : "tv",
         date: row.date,
