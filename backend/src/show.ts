@@ -56,13 +56,13 @@ showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
 
   if (type === "tv") {
     response = await withPoolConnection((client) =>
-      client.query("SELECT * FROM seasons WHERE show_id = $1", [show_id])
+      client.query("SELECT * FROM seasons WHERE show_id = $1 ORDER BY season_number", [show_id])
     );
     if (response.rows.length !== 0) {
       show.seasons = response.rows as Season[];
       show.seasons.forEach((season: Season) => (season.episodes = []));
       response = await withPoolConnection((client) =>
-        client.query("SELECT * FROM episodes WHERE show_id = $1", [show_id])
+        client.query("SELECT * FROM episodes WHERE show_id = $1 ORDER BY season_number, episode_number", [show_id])
       );
       if (response.rows.length !== 0) {
         response.rows.forEach((episode: Episode) => {
