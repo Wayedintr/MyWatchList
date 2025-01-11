@@ -23,6 +23,7 @@ export interface Show {
 
   genres: string[];
   seasons: Season[];
+  comments: Comment[];
 }
 
 export interface ShowRequest {
@@ -57,6 +58,13 @@ export interface Episode {
   season_number: number | null;
   runtime: number | null;
   still_path: string | null;
+}
+
+export interface Comment {
+  comment_id: number;
+  comment: string;
+  username: string;
+  date: string;
 }
 
 export interface SearchRequest {
@@ -162,4 +170,16 @@ export interface userFollowsResponse {
 
 export interface userFollowsRequest {
   username: string;
+}
+
+export interface MakeShowCommentRequest {
+  show_id: number;
+  type: "tv" | "movie";
+  comment: string;
+}
+
+export interface MakeShowCommentResponse {
+  message: string;
+  success: boolean;
+  comment_id: number;
 }

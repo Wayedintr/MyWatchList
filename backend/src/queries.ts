@@ -60,9 +60,12 @@ export const createTables = async (): Promise<void> => {
   const createTablesQuery = `
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE ,
     password VARCHAR(255) NOT NULL,
-    mail VARCHAR(255) NOT NULL UNIQUE
+    mail VARCHAR(255) NOT NULL UNIQUE,
+    CONSTRAINT username_validity CHECK (
+        username ~ '^[a-zA-Z0-9_]{3,30}$'
+    )
   );
 
   CREATE TABLE IF NOT EXISTS shows (
@@ -166,11 +169,13 @@ export const createTables = async (): Promise<void> => {
   );
 
   CREATE TABLE IF NOT EXISTS show_comments (
+    comment_id SERIAL PRIMARY KEY,
     show_id INT,
     is_movie BOOLEAN,
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     comment VARCHAR(1000),
-    PRIMARY KEY (show_id, is_movie, user_id),
+    date TIMESTAMP,
+    UNIQUE (show_id, is_movie, user_id, date),
     FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE
   );
 

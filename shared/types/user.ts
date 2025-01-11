@@ -33,3 +33,12 @@ export interface DeleteUserActivityResponse {
   message: string;
   success: boolean;
 }
+
+export interface DeleteShowCommentRequest {
+  comment_id: number;
+}
+
+export interface DeleteShowCommentResponse {
+  message: string;
+  success: boolean;
+}

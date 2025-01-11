@@ -12,6 +12,9 @@ import {
   ListResponse,
   ListGetRequest,
   ListGetResponse,
+  MakeShowCommentRequest,
+  MakeShowCommentResponse,
+  Comment,
 } from "@shared/types/show";
 import { insertShowById } from "./queries";
 import axios from "axios";
@@ -19,6 +22,7 @@ import { removeUndefined } from "./utils";
 import { authenticateToken } from "./auth";
 import { JWTPayload } from "@shared/types/auth";
 import jwt from "jsonwebtoken";
+import { DeleteShowCommentRequest, DeleteShowCommentResponse } from "@shared/types/user";
 
 export const showRouter = express.Router();
 
@@ -71,6 +75,17 @@ showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
       }
     }
   }
+
+  response = await withPoolConnection((client) =>
+    client.query(
+      `SELECT sc.comment_id, sc.comment, sc.date, u.username FROM show_comments sc
+       JOIN users u ON sc.user_id = u.id
+       WHERE sc.show_id = $1 AND sc.is_movie = $2
+       ORDER BY sc.date DESC`,
+      [show_id, type === "movie"]
+    )
+  );
+  show.comments = response.rows;
 
   return res.status(200).json({ message: "Show found", show });
 });
@@ -183,3 +198,70 @@ showRouter.get("/listget", async (req: Request, res: Response<ListGetResponse>) 
     res.status(403).json({ message: "Invalid token" });
   }
 });
+
+showRouter.post(
+  "/make-comment",
+  async (req: Request<{}, {}, MakeShowCommentRequest>, res: Response<MakeShowCommentResponse>) => {
+    const token = req.cookies?.authToken;
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated", success: false, comment_id: -1 });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+      const { show_id, type, comment } = req.body;
+
+      const insertCommentQuery = `INSERT INTO show_comments (show_id, is_movie, comment, user_id, date) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+      RETURNING comment_id`;
+
+      const insertCommentResult = await withPoolConnection((client) =>
+        client.query(insertCommentQuery, [show_id, type === "movie", comment, decoded.id])
+      );
+
+      if (insertCommentResult.rowCount === 0) {
+        return res.status(500).json({ message: "Error making comment", success: false, comment_id: -1 });
+      }
+
+      return res.status(200).json({
+        message: "Comment made successfully",
+        success: true,
+        comment_id: insertCommentResult.rows[0].comment_id,
+      });
+    } catch (error) {
+      console.error("Error making comment:", error);
+      res.status(403).json({ message: "Error making comment", success: false, comment_id: -1 });
+    }
+  }
+);
+
+showRouter.delete(
+  "/delete-comment",
+  async (req: Request<{}, {}, DeleteShowCommentRequest>, res: Response<DeleteShowCommentResponse>) => {
+    const token = req.cookies?.authToken;
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated", success: false });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+      const { comment_id } = req.query as unknown as DeleteShowCommentRequest;
+
+      const deleteCommentQuery = `DELETE FROM show_comments WHERE comment_id = $1 AND user_id = $2`;
+
+      const deleteCommentResult = await withPoolConnection((client) =>
+        client.query(deleteCommentQuery, [comment_id, decoded.id])
+      );
+
+      if (deleteCommentResult.rowCount === 0) {
+        return res.status(500).json({ message: "Error deleting comment", success: false });
+      }
+
+      return res.status(200).json({ message: "Comment deleted successfully", success: true });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(403).json({ message: "Error deleting comment", success: false });
+    }
+  }
+);

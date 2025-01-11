@@ -1,18 +1,29 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/Combobox";
 import { Input } from "@/components/ui/input";
-import { list, listget, show as showApi } from "@/lib/api";
-import { Show as ShowType, ShowRequest, ListGetRequest, UserShowInfo, Season, Episode } from "@shared/types/show";
-import { Clock, Loader2, MinusCircle, PlusCircle, Star } from "lucide-react";
+import { deleteShowComment, list, listget, makeShowComment, show as showApi } from "@/lib/api";
+import {
+  Show as ShowType,
+  ShowRequest,
+  ListGetRequest,
+  UserShowInfo,
+  Season,
+  Episode,
+  Comment,
+} from "@shared/types/show";
+import { Clock, Dot, Loader2, MinusCircle, PlusCircle, Send, Star, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Image } from "@/components/skeleton-img";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { timeAgo } from "@/lib/utils";
 
 interface ShowProps {
   is_movie: boolean;
@@ -32,6 +43,8 @@ export default function Show({ is_movie }: ShowProps) {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const [comment, setComment] = useState<string>("");
 
   const infoContainerRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +96,49 @@ export default function Show({ is_movie }: ShowProps) {
       });
     }
   }, [userShowInfo, loading]);
+
+  const handleCommentSubmit = () => {
+    makeShowComment({
+      comment: comment,
+      show_id: show_id ? parseInt(show_id) : -1,
+      type: is_movie ? "movie" : "tv",
+    }).then((res) => {
+      if (res.success) {
+        const newComment: Comment = {
+          comment: comment,
+          comment_id: res.comment_id,
+          date: new Date().toISOString(),
+          username: user?.username!,
+        };
+
+        setData((prevData) => {
+          if (prevData) {
+            return {
+              ...prevData,
+              comments: [newComment, ...(prevData.comments ?? [])],
+            };
+          }
+          return prevData;
+        });
+      }
+    });
+  };
+
+  const handleCommentDelete = (comment_id: number) => {
+    deleteShowComment({ comment_id: comment_id }).then((res) => {
+      if (res.success) {
+        setData((prevData) => {
+          if (prevData) {
+            return {
+              ...prevData,
+              comments: prevData.comments?.filter((comment) => comment.comment_id !== comment_id),
+            };
+          }
+          return prevData;
+        });
+      }
+    });
+  };
 
   if (loading || !data) {
     if (error) {
@@ -352,6 +408,56 @@ export default function Show({ is_movie }: ShowProps) {
                 </TabsContent>
               ))}
             </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="py-4 text-sm">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="font-semibold border-b pb-1 w-fit">Comments</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex gap-2">
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder={user ? "Leave a comment..." : "Sign in to leave a comment..."}
+                className="max-h-60"
+                disabled={!user}
+              />
+              <Button size={"icon"} disabled={comment === "" || !user} onClick={handleCommentSubmit}>
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="mr-12">
+              {data.comments.map((comment: Comment, index) => (
+                <div key={index} className="space-y-1 border-b p-3">
+                  <div className="flex items-center">
+                    <Button variant={"link"} asChild className="font-semibold p-0">
+                      <Link to={`/user/${comment.username}`}>{comment.username}</Link>
+                    </Button>
+                    <Dot className="text-muted-foreground w-4 h-4 shrink-0 mt-0.5" />
+                    <text className="text-muted-foreground">{timeAgo(comment.date)}</text>
+                    <div className="flex-grow flex justify-end">
+                      {user?.username === comment.username && (
+                        <Button
+                          size={"icon"}
+                          variant={"destructive"}
+                          className="w-4 h-4"
+                          onClick={() => handleCommentDelete(comment.comment_id)}
+                        >
+                          <X className="w-2 h-2" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <p>{comment.comment}</p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
