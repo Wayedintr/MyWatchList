@@ -108,20 +108,19 @@ export default function User() {
             <Label>{currentUser?.username?.substring(0, 2)}</Label>
           </AvatarFallback>
         </Avatar>
-        <PieChartComponent stats={
-          {
-            watching: stats.watching_count,
-            planToWatch: stats.plan_to_watch_count,
-            completed: stats.completed_count,
-            onHold: stats.on_hold_count,
-            dropped: stats.dropped_count, 
-          }
-        } />
+        <PieChartComponent stats={{
+          watching: stats.watching_count,
+          planToWatch: stats.plan_to_watch_count,
+          completed: stats.completed_count,
+          onHold: stats.on_hold_count,
+          dropped: stats.dropped_count,
+        }} />
         {ShowList.map((show) => (
           <ShowCard key={show.show_id} show={show} />
         ))}
-        {/* Only show the follow button if the viewed profile is not the current user's profile */}
-        {currentUser.username !== user?.username && (
+        
+        {/* Only show the follow button if the user is logged in and the viewed profile is not the current user's profile */}
+        {user && currentUser.username !== user?.username && (
           <Button
             variant={isFollowed ? "default" : "outline"} // Adjust variant dynamically
             className={`mt-4 w-full ${
@@ -141,6 +140,8 @@ export default function User() {
       </CardContent>
     </Card>
   );
+  
+  
 }
 
 function ShowCard({ show }: { show: showShort }) {

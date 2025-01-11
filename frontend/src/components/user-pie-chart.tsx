@@ -9,11 +9,11 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "
 // Props type definition
 interface PieChartComponentProps {
   stats: {
-    watching: string;
-    planToWatch: string;
-    completed: string;
-    onHold: string;
-    dropped: string;
+    watching: number;
+    planToWatch: number;
+    completed: number;
+    onHold: number;
+    dropped: number;
   };
 }
 
@@ -33,7 +33,7 @@ const chartConfig = {
   onHold: {
     label: "On Hold",
     color: "hsl(var(--chart-4))",
-  },
+  },  
   dropped: {
     label: "Dropped",
     color: "hsl(var(--chart-5))",
@@ -43,12 +43,12 @@ const chartConfig = {
 export function Component({ stats }: PieChartComponentProps) {
   // Prepare chart data based on stats prop
   const chartData = [
-  { category: "Watching", count: parseInt(stats.watching, 10), fill: "var(--color-watching)" },
-  { category: "Plan to Watch", count: parseInt(stats.planToWatch, 10), fill: "var(--color-plan-to-watch)" },
-  { category: "Completed", count: parseInt(stats.completed, 10), fill: "var(--color-completed)" },
-  { category: "On Hold", count: parseInt(stats.onHold, 10), fill: "var(--color-on-hold)" },
-  { category: "Dropped", count: parseInt(stats.dropped, 10), fill: "var(--color-dropped)" },
-];
+  { category: "Watching", count: parseInt(String(stats.watching), 10), fill: "var(--color-watching)" },
+  { category: "Plan to Watch", count: parseInt(String(stats.planToWatch), 10), fill: "var(--color-plan-to-watch)" },
+  { category: "Completed", count: parseInt(String(stats.completed), 10), fill: "var(--color-completed)" },
+  { category: "On Hold", count: parseInt(String(stats.onHold), 10), fill: "var(--color-on-hold)" },
+  { category: "Dropped", count: parseInt(String(stats.dropped), 10), fill: "var(--color-dropped)" },
+  ];
 
 
   console.log(stats);
