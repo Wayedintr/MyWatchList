@@ -56,6 +56,7 @@ export default function Show({ is_movie }: ShowProps) {
         }
 
         if (listData?.show_user_info) {
+          console.log(listData);
           setUserShowInfo(listData.show_user_info);
         }
       })

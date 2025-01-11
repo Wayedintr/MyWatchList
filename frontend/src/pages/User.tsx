@@ -71,8 +71,6 @@ export default function User() {
       }
     };
 
-    console.log(stats);
-
     checkFollow();
     fetchStats();
     fetchUser();

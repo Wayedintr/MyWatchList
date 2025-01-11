@@ -41,18 +41,15 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function Component({ stats }: PieChartComponentProps) {
+
   // Prepare chart data based on stats prop
   const chartData = [
-  { category: "Watching", count: parseInt(String(stats.watching), 10), fill: "var(--color-watching)" },
-  { category: "Plan to Watch", count: parseInt(String(stats.planToWatch), 10), fill: "var(--color-plan-to-watch)" },
-  { category: "Completed", count: parseInt(String(stats.completed), 10), fill: "var(--color-completed)" },
-  { category: "On Hold", count: parseInt(String(stats.onHold), 10), fill: "var(--color-on-hold)" },
-  { category: "Dropped", count: parseInt(String(stats.dropped), 10), fill: "var(--color-dropped)" },
+  { category: "Watching", count: parseInt(String(stats.watching)), fill: "var(--color-watching)" },
+  { category: "Plan to Watch", count: parseInt(String(stats.planToWatch)), fill: "var(--color-plan-to-watch)" },
+  { category: "Completed", count: parseInt(String(stats.completed)), fill: "var(--color-completed)" },
+  { category: "On Hold", count: parseInt(String(stats.onHold)), fill: "var(--color-on-hold)" },
+  { category: "Dropped", count: parseInt(String(stats.dropped)), fill: "var(--color-dropped)" },
   ];
-
-
-  console.log(stats);
-  console.log(chartData);
 
   const totalEntries = chartData.reduce((sum, entry) => sum + entry.count, 0);
 
