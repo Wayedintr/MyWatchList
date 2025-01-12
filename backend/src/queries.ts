@@ -185,7 +185,7 @@ export const createTables = async (): Promise<void> => {
     u.username,
     COUNT(CASE WHEN us.list_type = 'Watching' THEN 1 END) AS watching_count,
     COUNT(CASE WHEN us.list_type = 'Completed' THEN 1 END) AS completed_count,
-    COUNT(CASE WHEN us.list_type = 'On-Hold' THEN 1 END) AS on_hold_count,
+    COUNT(CASE WHEN us.list_type = 'On Hold' THEN 1 END) AS on_hold_count,
     COUNT(CASE WHEN us.list_type = 'Dropped' THEN 1 END) AS dropped_count,
     COUNT(CASE WHEN us.list_type = 'Plan to Watch' THEN 1 END) AS plan_to_watch_count,
     COUNT(*) AS total_entries,

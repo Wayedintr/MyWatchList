@@ -54,6 +54,7 @@ export default function User() {
 
     const fetchStats = async () => {
       const statsRes = await userstats({ username } as userStatsRequest);
+      console.log(statsRes);
       if (statsRes.stats) {
         setStats(statsRes.stats);
       } else {
