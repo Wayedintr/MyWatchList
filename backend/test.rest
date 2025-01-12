@@ -77,3 +77,6 @@ GET http://localhost:3000/user/activity?username=abc
 
 ### Follow Test 2
 GET http://localhost:3000/user/follows?username=abc
+
+### Follow List Test
+GET http://localhost:3000/user/friends?username=boran

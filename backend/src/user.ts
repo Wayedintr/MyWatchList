@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { withPoolConnection } from "./db";
-import { JWTPayload, UserPublicResponse } from "@shared/types/auth";
+import { JWTPayload, UserFriendsRequest, UserFriendsResponse, UserPublicResponse } from "@shared/types/auth";
 import {
   showShort,
   userFollowRequest,
@@ -19,6 +19,7 @@ import {
   WatchActivity,
 } from "@shared/types/user";
 import jwt from "jsonwebtoken";
+import { decode } from "punycode";
 
 const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
 
@@ -314,4 +315,43 @@ userRouter.get("/follows", async (req: Request<{}, {}, userFollowsRequest>, res:
     console.error("Error fetching user follows:", error);
     res.status(500).json({ message: "Error fetching user follows", follows: false });
   }
+});
+
+userRouter.get("/friends", async (req: Request<{}, {}, UserFriendsRequest>, res: Response<UserFriendsResponse>) => {
+  
+  const { username } = req.query;
+  const token = req.cookies?.authToken;
+  if (!token)
+    return res.status(401).json({
+      message: "Not authenticated",
+      friends: [],
+    });    
+  const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+  try {
+
+    const selectFollowerUserIdQuery = `SELECT id FROM users WHERE username = $1`;
+    const followerUserIdResult = await withPoolConnection((client) =>
+      client.query(selectFollowerUserIdQuery, [username])
+    );
+
+    
+    const selectFollowsQuery = `SELECT user_id, username FROM users 
+    JOIN user_follows ON users.id = user_follows.user_id WHERE user_follows.follow_id = $1`;
+    const followsResult = await withPoolConnection((client) =>
+      client.query(selectFollowsQuery, [followerUserIdResult.rows[0].id])
+    );
+
+    if (followsResult.rows.length === 0) {
+      return res.status(404).json({ message: "Users friends not found", friends: [] });
+    }
+
+    if (followsResult.rows.length !== 0) {
+
+      return res.status(200).json({ message: "User friends found successfully.", friends: followsResult.rows });
+    }
+  } catch (error) {
+    console.error("Error fetching user friends:", error);
+    res.status(500).json({ message: "Error fetching user friends", friends: [] });
+    }
 });

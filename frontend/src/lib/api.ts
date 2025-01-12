@@ -11,7 +11,8 @@ import {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
-  User,
+  UserFriendsRequest,
+  UserFriendsResponse,
   UserPublicResponse,
   UserResponse,
 } from "@shared/types/auth";
@@ -35,6 +36,7 @@ import {
   MakeShowCommentRequest,
   MakeShowCommentResponse,
 } from "@shared/types/show";
+import User from "@/pages/User";
 
 const API_BASE_URL = process.env.API_URL || "http://localhost:3000"; // Default to empty string if not set
 
@@ -154,4 +156,8 @@ export const deleteShowComment = async (
   showCommentRequest: DeleteShowCommentRequest
 ): Promise<DeleteShowCommentResponse> => {
   return apiRequest<DeleteShowCommentResponse>(`/show/delete-comment`, "DELETE", showCommentRequest);
+};
+
+export const userFriends = async (UserFriendsRequest: UserFriendsRequest): Promise<UserFriendsResponse> => {
+  return apiRequest<UserFriendsResponse>(`/user/friends`, "GET", UserFriendsRequest);
 };

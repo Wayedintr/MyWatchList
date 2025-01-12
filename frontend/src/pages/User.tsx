@@ -4,12 +4,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { UserPublic as UserType } from "@shared/types/auth";
-import { user as userApi, userfollow, userFollowController, usershows, userstats } from "@/lib/api";
-import { showShort, userFollowRequest, userFollowsRequest, userShowRequest, userStats, userStatsRequest } from "@shared/types/show";
+import { UserPublic, UserPublic as UserType } from "@shared/types/auth";
+import { user as userApi, userfollow, userFollowController, userFriends, usershows, userstats } from "@/lib/api";
+import {
+  showShort,
+  userFollowRequest,
+  userFollowsRequest,
+  userShowRequest,
+  userStats,
+  userStatsRequest,
+} from "@shared/types/show";
 import { useAuth } from "@/contexts/auth-provider";
 import { Component as PieChartComponent } from "@/components/user-pie-chart";
-
 
 export default function User() {
   const { username } = useParams<{ username: string }>();
@@ -19,6 +25,7 @@ export default function User() {
   const [stats, setStats] = useState({} as userStats);
   const [isFollowed, setIsFollowed] = useState(false); // State for follow status
   const [isHovered, setIsHovered] = useState(false); // State for hover status
+  const [FriendsList, setFriendsList] = useState<UserPublic[]>([]);
   const { user } = useAuth();
 
   const handleFollow = () => {
@@ -72,6 +79,20 @@ export default function User() {
       }
     };
 
+    const fetchFriends = async () => {
+      try {
+        const friendsRes = await userFriends({ username: username } as userFollowsRequest);
+        if (friendsRes.friends) {
+          setFriendsList(friendsRes.friends);
+        } else {
+          setError(true);
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch friends");
+      }
+    };
+
+    fetchFriends();
     checkFollow();
     fetchStats();
     fetchUser();
@@ -95,52 +116,103 @@ export default function User() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>
-          <Label>{currentUser.username}</Label>
-        </CardTitle>
-      </CardHeader>
       <CardContent>
-        <Avatar>
-          <AvatarImage src={`https://github.com/${currentUser.username}.png?size=120`} alt={currentUser.username} />
-          <AvatarFallback>
-            <Label>{currentUser?.username?.substring(0, 2)}</Label>
-          </AvatarFallback>
-        </Avatar>
-        <PieChartComponent stats={{
-          watching: stats.watching_count,
-          planToWatch: stats.plan_to_watch_count,
-          completed: stats.completed_count,
-          onHold: stats.on_hold_count,
-          dropped: stats.dropped_count,
-        }} />
-        {ShowList.map((show) => (
-          <ShowCard key={show.show_id} show={show} />
-        ))}
-        
-        {/* Only show the follow button if the user is logged in and the viewed profile is not the current user's profile */}
-        {user && currentUser.username !== user?.username && (
-          <Button
-            variant={isFollowed ? "default" : "outline"} // Adjust variant dynamically
-            className={`mt-4 w-full ${
-              isFollowed
-                ? isHovered
-                  ? "bg-red-500 text-white hover:bg-red-600" // Red for "Unfollow" hover
-                  : "bg-green-500 text-white" // Green for "Followed"
-                : "hover:bg-gray-100" // Optional hover effect for "Follow"
-            }`}
-            onClick={handleFollow}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-          >
-            {isFollowed && isHovered ? "Unfollow" : isFollowed ? "Followed" : "Follow"}
-          </Button>
-        )}
+        {/* Profile Text at the Top */}
+        <div className="text-left mb-4 mt-4">
+          <Label className="text-xl font-semibold">{currentUser?.username}'s Profile</Label>
+        </div>
+
+        {/* Horizontal Line */}
+        <hr className="border-t-2 mb-6" />
+
+        {/* Flex container for profile layout */}
+        <div className="flex items-start gap-10">
+          {/* Pie Chart on the Left */}
+
+          {/* Profile Photo and Friends Section on the Left */}
+          <div className="flex-shrink-0">
+            <Avatar className="w-40 h-40 rounded-full overflow-hidden shadow-lg">
+              <AvatarImage src={`https://github.com/${currentUser.username}.png?size=240`} alt={currentUser.username} />
+              <AvatarFallback>
+                <Label className="text-3xl">{currentUser?.username?.substring(0, 2)}</Label>
+              </AvatarFallback>
+            </Avatar>
+
+            {/* Friends Section */}
+            <div className="mt-4">
+              <Label className="text-lg font-semibold">Following</Label>
+              <hr className="border-t-2 mt-2 mb-4" />
+
+              {/* Friends List */}
+              <div className="flex gap-4 flex-wrap">
+                {FriendsList.map((friend) => (
+                  <Link key={friend.username} to={`/user/${friend.username}`}>
+                    <Avatar className="w-12 h-12 rounded-full overflow-hidden">
+                      <AvatarImage src={`https://github.com/${friend.username}.png?size=120`} alt={friend.username} />
+                      <AvatarFallback>
+                        <Label className="text-xl">{friend.username?.substring(0, 2)}</Label>
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* User Details and Show List on the Right */}
+          <div className="flex-grow space-y-3">
+            {/* Username */}
+            <CardHeader>
+              <CardTitle>
+                <Label className="text-2xl font-bold">{currentUser.username}'s Watch List</Label>
+              </CardTitle>
+            </CardHeader>
+
+            {/* Horizontal Line under Watch List */}
+            <hr className="border-t-2 mt-2 mb-4" />
+
+            {/* Show List */}
+            <div>
+              {ShowList.map((show) => (
+                <ShowCard key={show.show_id} show={show} />
+              ))}
+            </div>
+
+            {/* Follow Button */}
+            {user && currentUser.username !== user?.username && (
+              <Button
+                variant={isFollowed ? "default" : "outline"}
+                className={`w-full ${
+                  isFollowed
+                    ? isHovered
+                      ? "bg-red-500 text-white hover:bg-red-600"
+                      : "bg-green-500 text-white"
+                    : "hover:bg-gray-100"
+                }`}
+                onClick={handleFollow}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
+                {isFollowed && isHovered ? "Unfollow" : isFollowed ? "Followed" : "Follow"}
+              </Button>
+            )}
+          </div>
+
+          <div className="flex-shrink-0">
+            <PieChartComponent
+              stats={{
+                watching: stats.watching_count,
+                planToWatch: stats.plan_to_watch_count,
+                completed: stats.completed_count,
+                onHold: stats.on_hold_count,
+                dropped: stats.dropped_count,
+              }}
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
-  
-  
 }
 
 function ShowCard({ show }: { show: showShort }) {
@@ -151,23 +223,49 @@ function ShowCard({ show }: { show: showShort }) {
   const id = show.show_id;
 
   return (
-    <div className="max-h-36 flex gap-5 py-5">
-      <img src={`https://image.tmdb.org/t/p/w200${show.poster_path}`} alt={show.title} className="m-0 h-36" />
-      <div>
-        <Link to={`/show/${type}/${id}`} className="font-semibold text-lg">
-          {show.title}
-        </Link>
-        {/*@ts-ignore */}
-        <p>{show.list_type}</p>
-        {/*@ts-ignore */}
-        <p>Score:{show.score}</p>
-        {/*@ts-ignore */}
-        <p>Season:{show.season_number}</p>
-        <p>
-          {/*@ts-ignore */}
-          {show.episode_number}/{show.episode_count}
-        </p>
+    <Link
+      to={`/show/${type}/${id}`}
+      className="block max-w-xs bg-background rounded-lg shadow-md overflow-hidden transform transition-all hover:scale-105 hover:shadow-2xl mb-6"
+    >
+      <div className="flex flex-col md:flex-row">
+        {/* Show Poster */}
+        <img
+          src={`https://image.tmdb.org/t/p/w500${show.poster_path}`}
+          alt={show.title}
+          className="w-full md:w-32 h-48 object-cover object-center"
+        />
+
+        <div className="p-4 flex-grow flex flex-col justify-between">
+          {/* Show Title */}
+          <h2 className="text-lg font-medium text-primary hover:text-accent transition-all mb-2">{show.title}</h2>
+
+          {/* Show Info */}
+          <div className="text-sm text-gray-300 flex-grow">
+            {/*@ts-ignore */}
+            <p className="mb-1 text-gray-300">
+              List: <span className="font-medium text-gray-400">{show.list_type}</span>
+            </p>
+            {/*@ts-ignore */}
+            <p className="mb-1 text-gray-300">
+              Score: <span className="font-medium text-gray-400">{show.score}/10</span>
+            </p>
+            {/*@ts-ignore */}
+            <p className="mb-1 text-gray-300">
+              Season:{" "}
+              <span className="font-medium text-gray-400">
+                {show.season_number}/{show.episode_count}
+              </span>
+            </p>
+            <p>
+              {/*@ts-ignore */}
+              Episodes:{" "}
+              <span className="font-medium text-gray-400">
+                {show.episode_number}/{show.episode_count}
+              </span>
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }

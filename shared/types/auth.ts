@@ -35,6 +35,15 @@ export interface UserPublicResponse {
   user?: UserPublic;
 }
 
+export interface UserFriendsRequest {
+  username: string;
+}
+
+export interface UserFriendsResponse {
+  message: string;
+  friends?: UserPublic[];
+}
+
 export interface JWTPayload {
   id: string;
   mail: string;
