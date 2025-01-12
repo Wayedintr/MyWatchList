@@ -59,6 +59,15 @@ GET http://localhost:3000/show/listget?show_id=30984&is_movie=false
 ### Show list get in user page
 GET http://localhost:3000/user/shows?username=abc
 
+### User show list to use in homepage
+GET http://localhost:3000/user/show-list?user_id=1
+
+### User show list to use in homepage with list_type
+GET http://localhost:3000/user/show-list?user_id=1&list_type=Watching
+
+### User show list to use in homepage with show_type
+GET http://localhost:3000/user/show-list?user_id=1&show_type=movie
+
 ### User stats 
 GET http://localhost:3000/user/statistics?username=abc
 

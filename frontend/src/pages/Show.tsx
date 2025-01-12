@@ -334,82 +334,84 @@ export default function Show({ is_movie }: ShowProps) {
           </CardContent>
         </Card>
 
-        <Card className="w-full h-fit">
-          <CardContent className="py-4">
-            <Tabs defaultValue={data.seasons[0]?.name!}>
-              <TabsList className="w-full flex-wrap h-fit justify-start">
-                {data.seasons.map((season: Season, index) => (
-                  <TabsTrigger key={index} value={season.name!}>
-                    {season.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+        {!is_movie && (
+          <Card className="w-full h-fit">
+            <CardContent className="py-4">
+              <Tabs defaultValue={data.seasons[0]?.name!}>
+                <TabsList className="w-full flex-wrap h-fit justify-start">
+                  {data.seasons.map((season: Season, index) => (
+                    <TabsTrigger key={index} value={season.name!}>
+                      {season.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
 
-              {data.seasons.map((season: Season, index) => (
-                <TabsContent key={index} value={season.name!}>
-                  <ScrollArea className="h-96 pr-4 mt-2">
-                    {season.episodes.map((episode: Episode, index) => (
-                      <Card
-                        key={index}
-                        className={`w-full bg-background h-32 overflow-clip flex ${index !== 0 && "mt-2"}`}
-                      >
-                        <div className="h-full w-60 shrink-0 relative">
-                          <Image
-                            src={`https://image.tmdb.org/t/p/w500${
-                              episode.still_path || season.poster_path || data.poster_path
-                            }`}
-                            alt={episode.name!}
-                            className="h-full w-full object-cover shrink-0 absolute top-0 left-0"
-                          />
-                          <div className="relative p-1 space-x-1">
-                            {episode.vote_average && (
-                              <Badge className="space-x-1">
-                                <Star className="w-3 h-3 shrink-0" />
-                                <p>{episode.vote_average}</p>
-                              </Badge>
-                            )}
-                            {episode.runtime && (
-                              <Badge className="space-x-1">
-                                <Clock className="w-3 h-3 shrink-0" />
-                                <p>{episode.runtime} min</p>
-                              </Badge>
-                            )}
-                            {episode.air_date && (
-                              <Badge>
-                                {new Intl.DateTimeFormat("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }).format(new Date(episode.air_date!))}
-                              </Badge>
+                {data.seasons.map((season: Season, index) => (
+                  <TabsContent key={index} value={season.name!}>
+                    <ScrollArea className="h-96 pr-4 mt-2">
+                      {season.episodes.map((episode: Episode, index) => (
+                        <Card
+                          key={index}
+                          className={`w-full bg-background h-32 overflow-clip flex ${index !== 0 && "mt-2"}`}
+                        >
+                          <div className="h-full w-60 shrink-0 relative">
+                            <Image
+                              src={`https://image.tmdb.org/t/p/w500${
+                                episode.still_path || season.poster_path || data.poster_path
+                              }`}
+                              alt={episode.name!}
+                              className="h-full w-full object-cover shrink-0 absolute top-0 left-0"
+                            />
+                            <div className="relative p-1 space-x-1">
+                              {episode.vote_average && (
+                                <Badge className="space-x-1">
+                                  <Star className="w-3 h-3 shrink-0" />
+                                  <p>{episode.vote_average}</p>
+                                </Badge>
+                              )}
+                              {episode.runtime && (
+                                <Badge className="space-x-1">
+                                  <Clock className="w-3 h-3 shrink-0" />
+                                  <p>{episode.runtime} min</p>
+                                </Badge>
+                              )}
+                              {episode.air_date && (
+                                <Badge>
+                                  {new Intl.DateTimeFormat("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }).format(new Date(episode.air_date!))}
+                                </Badge>
+                              )}
+                            </div>
+
+                            {((userShowInfo.season_number as number) > season.season_number! ||
+                              ((userShowInfo.season_number as number) === season.season_number! &&
+                                (userShowInfo.episode_number as number) > episode.episode_number!)) && (
+                              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                <Badge className="bg-accent">Watched</Badge>
+                              </div>
                             )}
                           </div>
 
-                          {((userShowInfo.season_number as number) > season.season_number! ||
-                            ((userShowInfo.season_number as number) === season.season_number! &&
-                              (userShowInfo.episode_number as number) > episode.episode_number!)) && (
-                            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                              <Badge className="bg-accent">Watched</Badge>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="py-1 px-2 space-y-1">
-                          <p className="font-semibold">
-                            Episode {episode.episode_number} - {episode.name}
-                          </p>
-                          <ScrollArea type="always" className="h-24 pr-4">
-                            <p className="text-muted-foreground">{episode.overview}</p>
-                          </ScrollArea>
-                        </div>
-                      </Card>
-                    ))}
-                  </ScrollArea>
-                </TabsContent>
-              ))}
-            </Tabs>
-          </CardContent>
-        </Card>
+                          <div className="py-1 px-2 space-y-1">
+                            <p className="font-semibold">
+                              Episode {episode.episode_number} - {episode.name}
+                            </p>
+                            <ScrollArea type="always" className="h-24 pr-4">
+                              <p className="text-muted-foreground">{episode.overview}</p>
+                            </ScrollArea>
+                          </div>
+                        </Card>
+                      ))}
+                    </ScrollArea>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="py-4 text-sm">

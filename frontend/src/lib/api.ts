@@ -5,6 +5,8 @@ import {
   DeleteUserActivityResponse,
   GetUserActivityRequest,
   GetUserActivityResponse,
+  IncrementShowEpisodeRequest,
+  IncrementShowEpisodeResponse,
 } from "@shared/types/user";
 
 import {
@@ -35,6 +37,8 @@ import {
   userFollowsResponse,
   MakeShowCommentRequest,
   MakeShowCommentResponse,
+  UserShowListRequest,
+  UserShowListResponse,
 } from "@shared/types/show";
 import User from "@/pages/User";
 
@@ -156,6 +160,16 @@ export const deleteShowComment = async (
   showCommentRequest: DeleteShowCommentRequest
 ): Promise<DeleteShowCommentResponse> => {
   return apiRequest<DeleteShowCommentResponse>(`/show/delete-comment`, "DELETE", showCommentRequest);
+};
+
+export const userShowList = async (userShowListRequest: UserShowListRequest): Promise<UserShowListResponse> => {
+  return apiRequest<UserShowListResponse>(`/user/show-list`, "GET", userShowListRequest);
+};
+
+export const incrementShow = async (
+  incrementShowRequest: IncrementShowEpisodeRequest
+): Promise<IncrementShowEpisodeResponse> => {
+  return apiRequest<IncrementShowEpisodeResponse>(`/user/increment-show`, "POST", incrementShowRequest);
 };
 
 export const userFriends = async (UserFriendsRequest: UserFriendsRequest): Promise<UserFriendsResponse> => {

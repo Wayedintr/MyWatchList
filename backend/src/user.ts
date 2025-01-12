@@ -7,6 +7,9 @@ import {
   userFollowResponse,
   userFollowsRequest,
   userFollowsResponse,
+  UserShowInfo,
+  UserShowListRequest,
+  UserShowListResponse,
   userShowResponse,
   userStats,
   userStatsResponse,
@@ -16,10 +19,10 @@ import {
   DeleteUserActivityResponse,
   GetUserActivityRequest,
   GetUserActivityResponse,
-  WatchActivity,
+  IncrementShowEpisodeRequest,
+  IncrementShowEpisodeResponse,
 } from "@shared/types/user";
 import jwt from "jsonwebtoken";
-import { decode } from "punycode";
 
 const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
 
@@ -318,24 +321,21 @@ userRouter.get("/follows", async (req: Request<{}, {}, userFollowsRequest>, res:
 });
 
 userRouter.get("/friends", async (req: Request<{}, {}, UserFriendsRequest>, res: Response<UserFriendsResponse>) => {
-  
   const { username } = req.query;
   const token = req.cookies?.authToken;
   if (!token)
     return res.status(401).json({
       message: "Not authenticated",
       friends: [],
-    });    
+    });
   const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
   try {
-
     const selectFollowerUserIdQuery = `SELECT id FROM users WHERE username = $1`;
     const followerUserIdResult = await withPoolConnection((client) =>
       client.query(selectFollowerUserIdQuery, [username])
     );
 
-    
     const selectFollowsQuery = `SELECT user_id, username FROM users 
     JOIN user_follows ON users.id = user_follows.user_id WHERE user_follows.follow_id = $1`;
     const followsResult = await withPoolConnection((client) =>
@@ -347,11 +347,130 @@ userRouter.get("/friends", async (req: Request<{}, {}, UserFriendsRequest>, res:
     }
 
     if (followsResult.rows.length !== 0) {
-
       return res.status(200).json({ message: "User friends found successfully.", friends: followsResult.rows });
     }
   } catch (error) {
     console.error("Error fetching user friends:", error);
     res.status(500).json({ message: "Error fetching user friends", friends: [] });
-    }
+  }
 });
+
+userRouter.get("/show-list", async (req: Request, res: Response<UserShowListResponse>) => {
+  const query = req.query as unknown as UserShowListRequest;
+
+  try {
+    const { user_id, list_type, show_type } = query;
+
+    if (!user_id) {
+      return res.status(400).json({ message: "user_id is required" });
+    }
+
+    // Initialize the base query and parameters
+    let selectUserShowListQuery = `
+      SELECT us.show_id, us.is_movie, s.poster_path, s.title, 
+             us.list_type, us.season_number, us.episode_number, us.score, 
+             se.episode_count, s.number_of_seasons
+      FROM users u
+      JOIN user_shows us ON u.id = us.user_id
+      JOIN shows s ON us.show_id = s.show_id
+      LEFT JOIN seasons se 
+             ON s.show_id = se.show_id AND se.season_number = us.season_number
+      WHERE u.id = $1
+    `;
+    const parameters: (string | boolean)[] = [user_id.toString()];
+
+    // Add optional filters dynamically
+    if (list_type) {
+      selectUserShowListQuery += ` AND us.list_type = $${parameters.length + 1}`;
+      parameters.push(list_type);
+    }
+    if (show_type) {
+      selectUserShowListQuery += ` AND us.is_movie = $${parameters.length + 1}`;
+      parameters.push(show_type === "movie");
+    }
+
+    // Add ordering
+    selectUserShowListQuery += ` ORDER BY us.is_movie, us.list_type`;
+
+    // Execute the query
+    const userShowListResult = await withPoolConnection((client) => client.query(selectUserShowListQuery, parameters));
+
+    if (userShowListResult.rows.length === 0) {
+      return res.status(404).json({ message: "User show list not found" });
+    }
+
+    return res.status(200).json({
+      message: "User show list found successfully.",
+      show_list: userShowListResult.rows.map(
+        (row) =>
+          ({
+            show_id: row.show_id,
+            is_movie: row.is_movie,
+            poster_path: row.poster_path,
+            title: row.title,
+            user_show_info: {
+              list_type: row.list_type,
+              season_number: row.season_number, // Can be NULL
+              episode_number: row.episode_number, // Can be NULL
+              score: row.score,
+              episode_count: row.episode_count, // Can be NULL
+              number_of_seasons: row.number_of_seasons,
+            } as UserShowInfo,
+          } as unknown as showShort)
+      ),
+    });
+  } catch (error) {
+    console.error("Error fetching user show list:", error);
+    res.status(500).json({ message: "Error fetching user show list" });
+  }
+});
+
+userRouter.post(
+  "/increment-show",
+  async (req: Request<{}, {}, IncrementShowEpisodeRequest>, res: Response<IncrementShowEpisodeResponse>) => {
+    const token = req.cookies?.authToken;
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      const { show_id, type } = req.body;
+
+      if (!show_id || !type) {
+        return res.status(400).json({ message: "show_id and type are required" });
+      }
+
+      if (type === "tv") {
+        const incrementShowEpisodeQuery = `
+        UPDATE user_shows
+        SET episode_number = episode_number + 1
+        WHERE user_id = $1 AND show_id = $2 AND is_movie = false
+        RETURNING episode_number
+      `;
+
+        const rows = await withPoolConnection((client) =>
+          client.query(incrementShowEpisodeQuery, [decoded.id, show_id])
+        );
+        return res
+          .status(200)
+          .json({ message: "Show episode incremented successfully.", tv_episode_number: rows.rows[0].episode_number });
+      } else {
+        const completeMovieQuery = `
+        UPDATE user_shows
+        SET list_type = 'Completed'
+        WHERE user_id = $1 AND show_id = $2 AND is_movie = true
+        RETURNING list_type
+        `;
+
+        const rows = await withPoolConnection((client) => client.query(completeMovieQuery, [decoded.id, show_id]));
+        return res
+          .status(200)
+          .json({ message: "Movie completed successfully.", movie_completed: rows.rows[0].list_type === "Completed" });
+      }
+    } catch (error) {
+      console.error("Error incrementing show episode:", error);
+      res.status(500).json({ message: "Error incrementing show episode" });
+    }
+  }
+);

@@ -91,6 +91,7 @@ export interface UserShowInfo {
   episode_number?: number | null | "";
   score?: number | null | "";
   episode_count?: number | null | "";
+  number_of_seasons?: number | null | "";
 }
 
 // List post
@@ -182,4 +183,15 @@ export interface MakeShowCommentResponse {
   message: string;
   success: boolean;
   comment_id: number;
+}
+
+export interface UserShowListRequest {
+  user_id: number;
+  list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold";
+  show_type?: "movie" | "tv";
+}
+
+export interface UserShowListResponse {
+  message: string;
+  show_list?: showShort[];
 }
