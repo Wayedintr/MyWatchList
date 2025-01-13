@@ -39,6 +39,8 @@ import {
   MakeShowCommentResponse,
   UserShowListRequest,
   UserShowListResponse,
+  DiscoverShowsRequest,
+  DiscoverShowsResponse,
 } from "@shared/types/show";
 import User from "@/pages/User";
 
@@ -174,4 +176,8 @@ export const incrementShow = async (
 
 export const userFriends = async (UserFriendsRequest: UserFriendsRequest): Promise<UserFriendsResponse> => {
   return apiRequest<UserFriendsResponse>(`/user/friends`, "GET", UserFriendsRequest);
+};
+
+export const discoverShows = async (discoverShowsRequest: DiscoverShowsRequest): Promise<DiscoverShowsResponse> => {
+  return apiRequest<DiscoverShowsResponse>(`/show/discover`, "GET", discoverShowsRequest);
 };

@@ -322,13 +322,6 @@ userRouter.get("/follows", async (req: Request<{}, {}, userFollowsRequest>, res:
 
 userRouter.get("/friends", async (req: Request<{}, {}, UserFriendsRequest>, res: Response<UserFriendsResponse>) => {
   const { username } = req.query;
-  const token = req.cookies?.authToken;
-  if (!token)
-    return res.status(401).json({
-      message: "Not authenticated",
-      friends: [],
-    });
-  const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
   try {
     const selectFollowerUserIdQuery = `SELECT id FROM users WHERE username = $1`;
@@ -359,22 +352,23 @@ userRouter.get("/show-list", async (req: Request, res: Response<UserShowListResp
   const query = req.query as unknown as UserShowListRequest;
 
   try {
-    const { username, list_type, show_type } = query;
+    let { user_id, username, list_type, show_type } = query;
 
-    if (!username) {
-      return res.status(400).json({ message: "Username is required" });
+    // Validate input
+    if (!user_id && !username) {
+      return res.status(400).json({ message: "Either user_id or username is required" });
     }
 
-    const selectUserIdQuery = `SELECT id FROM users WHERE username = $1`;
-    const userIdResult = await withPoolConnection((client) => client.query(selectUserIdQuery, [username]));
+    // If username is provided, fetch user_id
+    if (username) {
+      const userQuery = `SELECT id FROM users WHERE username = $1`;
+      const userResult = await withPoolConnection((client) => client.query(userQuery, [username]));
 
-    if (userIdResult.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-
-    if (!userIdResult.rows[0].id) {
-      return res.status(400).json({ message: "user_id is required" });
+      user_id = userResult.rows[0].id;
     }
 
     // Initialize the base query and parameters
@@ -389,11 +383,11 @@ userRouter.get("/show-list", async (req: Request, res: Response<UserShowListResp
              ON s.show_id = se.show_id AND se.season_number = us.season_number
       WHERE u.id = $1
     `;
-    const parameters: (string | boolean)[] = [userIdResult.rows[0].id.toString()];
+    const parameters: (string | boolean)[] = [user_id.toString()];
 
     // Add optional filters dynamically
     if (list_type) {
-      selectUserShowListQuery += ` AND us.list_type = $${parameters.length + 1}`;
+      selectUserShowListQuery += ` AND us.list_type = $${parameters.length + 1} AND us.list_type IS NOT NULL`;
       parameters.push(list_type);
 
       if (list_type === "Watching") {

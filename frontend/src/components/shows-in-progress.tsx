@@ -37,7 +37,7 @@ export function ShowsInProgress({ className, ...props }: {} & React.HTMLAttribut
             <Image
               src={`https://image.tmdb.org/t/p/w500/${show.poster_path}`}
               alt={show.title!}
-              className="object-cover w-full h-full absolute inset-0"
+              className="object-cover w-full h-full absolute inset-0 group-hover:scale-105 transition-transform"
             />
           </Link>
 

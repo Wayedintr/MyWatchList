@@ -14,12 +14,12 @@ import {
   ListGetResponse,
   MakeShowCommentRequest,
   MakeShowCommentResponse,
-  Comment,
+  DiscoverShowsResponse,
+  DiscoverShowsRequest,
 } from "@shared/types/show";
 import { insertShowById } from "./queries";
 import axios from "axios";
 import { removeUndefined } from "./utils";
-import { authenticateToken } from "./auth";
 import { JWTPayload } from "@shared/types/auth";
 import jwt from "jsonwebtoken";
 import { DeleteShowCommentRequest, DeleteShowCommentResponse } from "@shared/types/user";
@@ -132,6 +132,25 @@ showRouter.post("/list", async (req: Request<{}, {}, ListRequest>, res: Response
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+    if (
+      !user_show_info.list_type &&
+      !user_show_info.season_number &&
+      !user_show_info.episode_number &&
+      !user_show_info.score
+    ) {
+      const listDeleteQuery = `DELETE FROM user_shows WHERE user_id = $1 AND show_id = $2 AND is_movie = $3;`;
+
+      const listResult = await withPoolConnection((client) =>
+        client.query(listDeleteQuery, [decoded.id, show_id, is_movie])
+      );
+
+      if (listResult.rowCount === 0) {
+        return res.status(404).json({ message: "Show not found in list" });
+      }
+
+      return res.status(200).json({ message: "Show removed from list successfully" });
+    }
 
     const listInsertQuery = `INSERT INTO user_shows (user_id, show_id, is_movie, list_type, season_number, episode_number, score) VALUES ($1, $2, $3, $4, $5, $6, $7)
     ON CONFLICT (user_id, show_id, is_movie) DO UPDATE SET 
@@ -265,3 +284,31 @@ showRouter.delete(
     }
   }
 );
+
+showRouter.get("/discover", async (req: Request, res: Response<DiscoverShowsResponse>) => {
+  const params = removeUndefined(req.query as unknown as DiscoverShowsRequest);
+
+  if (!params.type) {
+    return res.status(400).json({ message: "Type is required" });
+  }
+
+  try {
+    const url = `https://api.themoviedb.org/3/discover/${params.type}`;
+    const searchParams = {
+      ...params,
+      api_key: process.env.TMDB_API_KEY,
+    };
+
+    console.log("Making request to:", url);
+    const response = await axios.get(url, { params: searchParams });
+    const apiResponse = response.data as SearchApiResponse;
+    if (apiResponse.results.length === 0) {
+      return res.status(404).json({ message: "No results found" });
+    }
+
+    return res.status(200).json({ message: "Search results", result: apiResponse });
+  } catch (error) {
+    console.error("Error getting popular shows:", error);
+    res.status(500).json({ message: "Error getting popular shows" });
+  }
+});

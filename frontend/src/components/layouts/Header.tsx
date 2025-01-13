@@ -113,7 +113,7 @@ function UserDropdown() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-auto p-0 hover:bg-transparent hover:text-accent">
           <Avatar>
-            <AvatarImage src={`https://github.com/${user.username}.png?size=120`} alt="Profile image" />
+            <AvatarImage src={`https://api.dicebear.com/9.x/identicon/svg?seed=${user.username}`} alt="Profile image" />
             <AvatarFallback>{user.username[0] + user.username[1]}</AvatarFallback>
           </Avatar>
           <ChevronDown size={16} strokeWidth={2} className="ms-2 opacity-60" aria-hidden="true" />

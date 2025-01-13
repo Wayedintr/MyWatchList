@@ -16,6 +16,7 @@ import {
 } from "@shared/types/show";
 import { useAuth } from "@/contexts/auth-provider";
 import { Component as PieChartComponent } from "@/components/user-pie-chart";
+import { UserCheck, UserPlus } from "lucide-react";
 
 export default function User() {
   const { username } = useParams<{ username: string }>();
@@ -24,7 +25,6 @@ export default function User() {
   const [ShowList, setShowList] = useState<showShort[]>([]);
   const [stats, setStats] = useState({} as userStats);
   const [isFollowed, setIsFollowed] = useState(false); // State for follow status
-  const [isHovered, setIsHovered] = useState(false); // State for hover status
   const [FriendsList, setFriendsList] = useState<UserPublic[]>([]);
   const { user } = useAuth();
 
@@ -79,15 +79,9 @@ export default function User() {
     };
 
     const fetchFriends = async () => {
-      try {
-        const friendsRes = await userFriends({ username: username } as userFollowsRequest);
-        if (friendsRes.friends) {
-          setFriendsList(friendsRes.friends);
-        } else {
-          setError(true);
-        }
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch friends");
+      const friendsRes = await userFriends({ username: username } as userFollowsRequest);
+      if (friendsRes.friends) {
+        setFriendsList(friendsRes.friends);
       }
     };
 
@@ -131,15 +125,31 @@ export default function User() {
           {/* Profile Photo and Friends Section on the Left */}
           <div className="flex-shrink-0">
             <Avatar className="w-40 h-40 rounded-full overflow-hidden shadow-lg">
-              <AvatarImage src={`https://github.com/${currentUser.username}.png?size=240`} alt={currentUser.username} />
+              <AvatarImage
+                src={`https://api.dicebear.com/9.x/identicon/svg?seed=${currentUser.username}`}
+                alt={currentUser.username}
+              />
               <AvatarFallback>
                 <Label className="text-3xl">{currentUser?.username?.substring(0, 2)}</Label>
               </AvatarFallback>
             </Avatar>
 
+            {/* Follow Button */}
+            {user && currentUser.username !== user?.username && (
+              <Button
+                className="w-full mt-4"
+                size={"sm"}
+                variant={isFollowed ? "outline" : "default"}
+                onClick={handleFollow}
+              >
+                {isFollowed ? <UserCheck /> : <UserPlus />}
+                {isFollowed ? "Following" : "Follow"}
+              </Button>
+            )}
+
             {/* Friends Section */}
             <div className="mt-4">
-              <Label className="text-lg font-semibold">Following</Label>
+              <Label className="text-lg font-semibold">Followers</Label>
               <hr className="border-t-2 mt-2 mb-4" />
 
               {/* Friends List */}
@@ -147,7 +157,10 @@ export default function User() {
                 {FriendsList.map((friend) => (
                   <Link key={friend.username} to={`/user/${friend.username}`}>
                     <Avatar className="w-12 h-12 rounded-full overflow-hidden">
-                      <AvatarImage src={`https://github.com/${friend.username}.png?size=120`} alt={friend.username} />
+                      <AvatarImage
+                        src={`https://api.dicebear.com/9.x/identicon/svg?seed=${friend.username}`}
+                        alt={friend.username}
+                      />
                       <AvatarFallback>
                         <Label className="text-xl">{friend.username?.substring(0, 2)}</Label>
                       </AvatarFallback>
@@ -176,25 +189,6 @@ export default function User() {
                 <ShowCard key={show.show_id} show={show} />
               ))}
             </div>
-
-            {/* Follow Button */}
-            {user && currentUser.username !== user?.username && (
-              <Button
-                variant={isFollowed ? "default" : "outline"}
-                className={`w-full ${
-                  isFollowed
-                    ? isHovered
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "bg-green-500 text-white"
-                    : "hover:bg-gray-100"
-                }`}
-                onClick={handleFollow}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-              >
-                {isFollowed && isHovered ? "Unfollow" : isFollowed ? "Followed" : "Follow"}
-              </Button>
-            )}
           </div>
 
           <div className="flex-shrink-0">
@@ -252,14 +246,16 @@ function ShowCard({ show }: { show: showShort }) {
               Season:{" "}
               <span className="font-medium text-gray-400">
                 {/*@ts-ignore */}
-                {show.user_show_info?.season_number ? show.user_show_info?.season_number : "0"}/{show.user_show_info?.number_of_seasons}
+                {show.user_show_info?.season_number ? show.user_show_info?.season_number : "0"}/
+                {show.user_show_info?.number_of_seasons}
               </span>
             </p>
             <p>
               Episodes:{" "}
               <span className="font-medium text-gray-400">
                 {/*@ts-ignore */}
-                {show.user_show_info?.episode_number ? show.user_show_info?.episode_number : "0"}/{show.user_show_info?.episode_count ?? 0}
+                {show.user_show_info?.episode_number ? show.user_show_info?.episode_number : "0"}/
+                {show.user_show_info?.episode_count ?? 0}
               </span>
             </p>
           </div>
