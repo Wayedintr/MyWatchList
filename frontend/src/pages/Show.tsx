@@ -204,7 +204,7 @@ export default function Show({ is_movie }: ShowProps) {
                   { value: "On Hold", label: "On Hold" },
                 ]}
                 onChange={(value) => {
-                  if (value === "Completed") {
+                  if (value === "Completed" && !is_movie) {
                     // Lock season and episode numbers to the last available values
                     const lastSeason = data.seasons[data.seasons.length - 1];
                     const lastEpisode = lastSeason.episode_count;

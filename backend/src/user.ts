@@ -415,7 +415,7 @@ userRouter.get("/show-list", async (req: Request, res: Response<UserShowListResp
       selectUserShowListQuery += ` AND us.list_type = $${parameters.length + 1}`;
       parameters.push(list_type);
 
-      if (list_type === "Watching") {
+      if (list_type === "Watching" && show_type === "tv") {
         selectUserShowListQuery += ` AND us.season_number IS NOT NULL`;
       }
     }
