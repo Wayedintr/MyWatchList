@@ -359,9 +359,21 @@ userRouter.get("/show-list", async (req: Request, res: Response<UserShowListResp
   const query = req.query as unknown as UserShowListRequest;
 
   try {
-    const { user_id, list_type, show_type } = query;
+    const { username, list_type, show_type } = query;
 
-    if (!user_id) {
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    const selectUserIdQuery = `SELECT id FROM users WHERE username = $1`;
+    const userIdResult = await withPoolConnection((client) => client.query(selectUserIdQuery, [username]));
+
+    if (userIdResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+
+    if (!userIdResult.rows[0].id) {
       return res.status(400).json({ message: "user_id is required" });
     }
 
@@ -377,7 +389,7 @@ userRouter.get("/show-list", async (req: Request, res: Response<UserShowListResp
              ON s.show_id = se.show_id AND se.season_number = us.season_number
       WHERE u.id = $1
     `;
-    const parameters: (string | boolean)[] = [user_id.toString()];
+    const parameters: (string | boolean)[] = [userIdResult.rows[0].id.toString()];
 
     // Add optional filters dynamically
     if (list_type) {

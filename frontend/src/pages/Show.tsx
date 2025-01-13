@@ -199,13 +199,38 @@ export default function Show({ is_movie }: ShowProps) {
                   { value: "On Hold", label: "On Hold" },
                 ]}
                 onChange={(value) => {
-                  setUserShowInfo({ ...userShowInfo, list_type: value });
+                  if (value === "Completed") {
+                    // Lock season and episode numbers to the last available values
+                    const lastSeason = data.seasons[data.seasons.length - 1];
+                    const lastEpisode = lastSeason.episode_count;
+                
+                    setUserShowInfo({
+                      ...userShowInfo,
+                      list_type: value,
+                      season_number: lastSeason.season_number,
+                      episode_number: lastEpisode,
+                    });
+                  } else if (value === "Plan To Watch") {
+                    // Lock season and episode numbers to null
+                    setUserShowInfo({
+                      ...userShowInfo,
+                      list_type: value,
+                      season_number: null,
+                      episode_number: null,
+                    });
+                  } else {
+                    // Update status without modifying season or episode
+                    setUserShowInfo({
+                      ...userShowInfo,
+                      list_type: value,
+                    });
+                  }
                 }}
                 disableSearch
               />
             </div>
 
-            {!is_movie && (
+            {!is_movie && userShowInfo.list_type !== "Plan To Watch" && (
               <>
                 <div className="flex flex-col gap-1">
                   <Label className="font-bold ml-0.5">Season</Label>
@@ -237,30 +262,24 @@ export default function Show({ is_movie }: ShowProps) {
                       <MinusCircle className="w-full h-full" />
                     </button>
 
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        value={userShowInfo.season_number ? userShowInfo.episode_number?.toString() || 0 : ""}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          if (!isNaN(value)) {
-                            const clamped = Math.min(
-                              value,
-                              data.seasons[Number(userShowInfo.season_number)]?.episode_count || 0
-                            );
-                            setUserShowInfo({ ...userShowInfo, episode_number: clamped });
-                          } else {
-                            setUserShowInfo({ ...userShowInfo, episode_number: null });
-                          }
-                        }}
-                        className="bg-background w-20 text-left peer pe-9"
-                        disabled={!userShowInfo.season_number}
-                      />
-                      <div className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50">
-                        {userShowInfo.season_number &&
-                          "/" + data.seasons[Number(userShowInfo.season_number)]?.episode_count}
-                      </div>
-                    </div>
+                    <Input
+                      type="number"
+                      value={userShowInfo.season_number ? userShowInfo.episode_number?.toString() || 0 : ""}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (!isNaN(value)) {
+                          const clamped = Math.min(
+                            value,
+                            data.seasons[Number(userShowInfo.season_number)]?.episode_count || 0
+                          );
+                          setUserShowInfo({ ...userShowInfo, episode_number: clamped });
+                        } else {
+                          setUserShowInfo({ ...userShowInfo, episode_number: null });
+                        }
+                      }}
+                      className="bg-background w-20 text-left peer pe-9"
+                      disabled={!userShowInfo.season_number}
+                    />
 
                     <button
                       className="rounded-full h-5 w-5 hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"

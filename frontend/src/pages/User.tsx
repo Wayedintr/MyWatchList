@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, NavLink } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   showShort,
   userFollowRequest,
   userFollowsRequest,
-  userShowRequest,
+  UserShowListRequest,
   userStats,
   userStatsRequest,
 } from "@shared/types/show";
@@ -51,7 +51,7 @@ export default function User() {
     };
 
     const fetchShows = async () => {
-      const showRes = await usershows({ username } as userShowRequest);
+      const showRes = await usershows({ username } as UserShowListRequest);
       if (showRes.show_list) {
         setShowList(showRes.show_list);
       } else {
@@ -61,7 +61,6 @@ export default function User() {
 
     const fetchStats = async () => {
       const statsRes = await userstats({ username } as userStatsRequest);
-      console.log(statsRes);
       if (statsRes.stats) {
         setStats(statsRes.stats);
       } else {
@@ -219,9 +218,9 @@ function ShowCard({ show }: { show: showShort }) {
   if (!show.poster_path || !show.title || !show.show_id) {
     return JSON.stringify(show);
   }
+  console.log(show);
   const type = show.is_movie ? "movie" : "tv";
   const id = show.show_id;
-
   return (
     <Link
       to={`/show/${type}/${id}`}
@@ -241,26 +240,26 @@ function ShowCard({ show }: { show: showShort }) {
 
           {/* Show Info */}
           <div className="text-sm text-gray-300 flex-grow">
-            {/*@ts-ignore */}
             <p className="mb-1 text-gray-300">
-              List: <span className="font-medium text-gray-400">{show.list_type}</span>
+              {/*@ts-ignore */}
+              List: <span className="font-medium text-gray-400">{show.user_show_info?.list_type}</span>
             </p>
-            {/*@ts-ignore */}
             <p className="mb-1 text-gray-300">
-              Score: <span className="font-medium text-gray-400">{show.score}/10</span>
+              {/*@ts-ignore */}
+              Score: <span className="font-medium text-gray-400">{show.user_show_info?.score}/10</span>
             </p>
-            {/*@ts-ignore */}
             <p className="mb-1 text-gray-300">
               Season:{" "}
               <span className="font-medium text-gray-400">
-                {show.season_number}/{show.episode_count}
+                {/*@ts-ignore */}
+                {show.user_show_info?.season_number ? show.user_show_info?.season_number : "0"}/{show.user_show_info?.number_of_seasons}
               </span>
             </p>
             <p>
-              {/*@ts-ignore */}
               Episodes:{" "}
               <span className="font-medium text-gray-400">
-                {show.episode_number}/{show.episode_count}
+                {/*@ts-ignore */}
+                {show.user_show_info?.episode_number ? show.user_show_info?.episode_number : "0"}/{show.user_show_info?.episode_count ?? 0}
               </span>
             </p>
           </div>

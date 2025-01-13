@@ -40,13 +40,13 @@ export function Header() {
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link to={"/sample"}>
-              <NavigationMenuLink className={navigationMenuTriggerStyle()}>Sample</NavigationMenuLink>
+            <Link to={"/search"}>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()}>Search</NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link to={"/empty"}>
-              <NavigationMenuLink className={navigationMenuTriggerStyle()}>Empty</NavigationMenuLink>
+            <Link to={"/statistics"}>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()}>Statistics</NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
         </NavigationMenuList>
@@ -130,24 +130,24 @@ function UserDropdown() {
             <User size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
             <span>My Profile</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="flex items-center gap-2">
+          <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate("/search")}>
             <Layers2 size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
-            <span>Option 2</span>
+            <span>Search</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="flex items-center gap-2">
+          <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate("/statistics")}>
             <BookOpen size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
-            <span>Option 3</span>
+            <span>Statistics</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem className="flex items-center gap-2">
             <Pin size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
-            <span>Option 4</span>
+            <span>Option 1</span>
           </DropdownMenuItem>
           <DropdownMenuItem className="flex items-center gap-2">
             <UserPen size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
-            <span>Option 5</span>
+            <span>Option 2</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

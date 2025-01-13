@@ -186,7 +186,7 @@ export interface MakeShowCommentResponse {
 }
 
 export interface UserShowListRequest {
-  user_id: number;
+  username: string;
   list_type?: "Plan To Watch" | "Watching" | "Completed" | "Dropped" | "On Hold";
   show_type?: "movie" | "tv";
 }

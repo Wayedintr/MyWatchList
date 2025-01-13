@@ -124,8 +124,8 @@ export const listget = async (listGetRequest: ListGetRequest): Promise<ListGetRe
   return apiRequest<ListGetResponse>(`/show/listget`, "GET", listGetRequest);
 };
 
-export const usershows = async (userShowRequest: userShowRequest): Promise<userShowResponse> => {
-  return apiRequest<userShowResponse>(`/user/shows`, "GET", userShowRequest);
+export const usershows = async (UserShowListRequest: UserShowListRequest): Promise<UserShowListResponse> => {
+  return apiRequest<UserShowListResponse>(`/user/show-list`, "GET", UserShowListRequest);
 };
 
 export const userstats = async (userStatsRequest: userStatsRequest): Promise<userStatsResponse> => {
