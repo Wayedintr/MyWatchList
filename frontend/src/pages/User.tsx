@@ -5,8 +5,18 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { UserPublic, UserPublic as UserType } from "@shared/types/auth";
-import { user as userApi, userfollow, userFollowController, userFriends, usershows, userstats } from "@/lib/api";
 import {
+  deleteUserComment,
+  makeUserComment,
+  user as userApi,
+  userfollow,
+  userFollowController,
+  userFriends,
+  usershows,
+  userstats,
+} from "@/lib/api";
+import {
+  Comment,
   showShort,
   userFollowRequest,
   userFollowsRequest,
@@ -16,7 +26,9 @@ import {
 } from "@shared/types/show";
 import { useAuth } from "@/contexts/auth-provider";
 import { Component as PieChartComponent } from "@/components/user-pie-chart";
-import { UserCheck, UserPlus } from "lucide-react";
+import { Dot, Send, UserCheck, UserPlus, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { timeAgo } from "@/lib/utils";
 
 export default function User() {
   const { username } = useParams<{ username: string }>();
@@ -28,13 +40,73 @@ export default function User() {
   const [FriendsList, setFriendsList] = useState<UserPublic[]>([]);
   const { user } = useAuth();
 
+  const [comment, setComment] = useState<string>("");
+
   const handleFollow = () => {
     userfollow({ followed_username: username, is_following: isFollowed } as userFollowRequest);
     setIsFollowed((prev) => !prev); // Toggle follow status
   };
 
+  const handleCommentSubmit = () => {
+    makeUserComment({
+      comment: comment,
+      target_user_id: currentUser.user_id,
+    }).then((res) => {
+      if (res.success) {
+        const newComment: Comment = {
+          comment: comment,
+          comment_id: res.comment_id,
+          date: new Date().toISOString(),
+          username: user?.username!,
+        };
+
+        setUser((prevUser) => {
+          if (prevUser) {
+            return {
+              ...prevUser,
+              comments: [newComment, ...(prevUser.comments ?? [])],
+            };
+          }
+          return prevUser;
+        });
+
+        setComment("");
+      }
+    });
+  };
+
+  const handleCommentDelete = (comment_id: number) => {
+    deleteUserComment({ comment_id: comment_id }).then((res) => {
+      if (res.success) {
+        setUser((prevUser) => {
+          if (prevUser) {
+            return {
+              ...prevUser,
+              comments: prevUser.comments?.filter((comment) => comment.comment_id !== comment_id),
+            };
+          }
+          return prevUser;
+        });
+      }
+    });
+  };
+
   useEffect(() => {
     if (!username) return;
+
+    // Scroll to top smoothly
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    setUser({} as UserType);
+    setError(null);
+    setShowList([]);
+    setStats({} as userStats);
+    setIsFollowed(false);
+    setFriendsList([]);
+    setComment("");
 
     setError(null);
     const fetchUser = async () => {
@@ -108,103 +180,155 @@ export default function User() {
   }
 
   return (
-    <Card>
-      <CardContent>
-        {/* Profile Text at the Top */}
-        <div className="text-left mb-4 mt-4">
-          <Label className="text-xl font-semibold">{currentUser?.username}'s Profile</Label>
-        </div>
+    <>
+      <Card className="mt-4">
+        <CardContent>
+          {/* Profile Text at the Top */}
+          <div className="text-left mb-4 mt-4">
+            <Label className="text-xl font-semibold">{currentUser?.username}'s Profile</Label>
+          </div>
 
-        {/* Horizontal Line */}
-        <hr className="border-t-2 mb-6" />
+          {/* Horizontal Line */}
+          <hr className="border-t-2 mb-6" />
 
-        {/* Flex container for profile layout */}
-        <div className="flex items-start gap-10">
-          {/* Pie Chart on the Left */}
+          {/* Flex container for profile layout */}
+          <div className="flex items-start gap-10">
+            {/* Pie Chart on the Left */}
 
-          {/* Profile Photo and Friends Section on the Left */}
-          <div className="flex-shrink-0">
-            <Avatar className="w-40 h-40 rounded-full overflow-hidden shadow-lg">
-              <AvatarImage
-                src={`https://api.dicebear.com/9.x/identicon/svg?seed=${currentUser.username}`}
-                alt={currentUser.username}
-              />
-              <AvatarFallback>
-                <Label className="text-3xl">{currentUser?.username?.substring(0, 2)}</Label>
-              </AvatarFallback>
-            </Avatar>
+            {/* Profile Photo and Friends Section on the Left */}
+            <div className="flex-shrink-0">
+              <Avatar className="w-40 h-40 rounded-full overflow-hidden shadow-lg">
+                <AvatarImage
+                  src={`https://api.dicebear.com/9.x/identicon/svg?seed=${currentUser.username}`}
+                  alt={currentUser.username}
+                />
+                <AvatarFallback>
+                  <Label className="text-3xl">{currentUser?.username?.substring(0, 2)}</Label>
+                </AvatarFallback>
+              </Avatar>
 
-            {/* Follow Button */}
-            {user && currentUser.username !== user?.username && (
-              <Button
-                className="w-full mt-4"
-                size={"sm"}
-                variant={isFollowed ? "outline" : "default"}
-                onClick={handleFollow}
-              >
-                {isFollowed ? <UserCheck /> : <UserPlus />}
-                {isFollowed ? "Following" : "Follow"}
-              </Button>
-            )}
+              {/* Follow Button */}
+              {user && currentUser.username !== user?.username && (
+                <Button
+                  className="w-full mt-4"
+                  size={"sm"}
+                  variant={isFollowed ? "outline" : "default"}
+                  onClick={handleFollow}
+                >
+                  {isFollowed ? <UserCheck /> : <UserPlus />}
+                  {isFollowed ? "Following" : "Follow"}
+                </Button>
+              )}
 
-            {/* Friends Section */}
-            <div className="mt-4">
-              <Label className="text-lg font-semibold">Followers</Label>
+              {/* Friends Section */}
+              <div className="mt-4">
+                <Label className="text-lg font-semibold">Followers</Label>
+                <hr className="border-t-2 mt-2 mb-4" />
+
+                {/* Friends List */}
+                <div className="flex gap-4 flex-wrap">
+                  {FriendsList.map((friend) => (
+                    <Link key={friend.username} to={`/user/${friend.username}`}>
+                      <Avatar className="w-12 h-12 rounded-full overflow-hidden">
+                        <AvatarImage
+                          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${friend.username}`}
+                          alt={friend.username}
+                        />
+                        <AvatarFallback>
+                          <Label className="text-xl">{friend.username?.substring(0, 2)}</Label>
+                        </AvatarFallback>
+                      </Avatar>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* User Details and Show List on the Right */}
+            <div className="flex-grow space-y-3">
+              {/* Username */}
+              <CardHeader>
+                <CardTitle>
+                  <Label className="text-2xl font-bold">{currentUser.username}'s Watch List</Label>
+                </CardTitle>
+              </CardHeader>
+
+              {/* Horizontal Line under Watch List */}
               <hr className="border-t-2 mt-2 mb-4" />
 
-              {/* Friends List */}
-              <div className="flex gap-4 flex-wrap">
-                {FriendsList.map((friend) => (
-                  <Link key={friend.username} to={`/user/${friend.username}`}>
-                    <Avatar className="w-12 h-12 rounded-full overflow-hidden">
-                      <AvatarImage
-                        src={`https://api.dicebear.com/9.x/identicon/svg?seed=${friend.username}`}
-                        alt={friend.username}
-                      />
-                      <AvatarFallback>
-                        <Label className="text-xl">{friend.username?.substring(0, 2)}</Label>
-                      </AvatarFallback>
-                    </Avatar>
-                  </Link>
+              {/* Show List */}
+              <div>
+                {ShowList.map((show) => (
+                  <ShowCard key={show.show_id} show={show} />
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* User Details and Show List on the Right */}
-          <div className="flex-grow space-y-3">
-            {/* Username */}
-            <CardHeader>
-              <CardTitle>
-                <Label className="text-2xl font-bold">{currentUser.username}'s Watch List</Label>
-              </CardTitle>
-            </CardHeader>
-
-            {/* Horizontal Line under Watch List */}
-            <hr className="border-t-2 mt-2 mb-4" />
-
-            {/* Show List */}
-            <div>
-              {ShowList.map((show) => (
-                <ShowCard key={show.show_id} show={show} />
-              ))}
+            <div className="flex-shrink-0">
+              <PieChartComponent
+                stats={{
+                  watching: stats.watching_count,
+                  planToWatch: stats.plan_to_watch_count,
+                  completed: stats.completed_count,
+                  onHold: stats.on_hold_count,
+                  dropped: stats.dropped_count,
+                }}
+              />
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="flex-shrink-0">
-            <PieChartComponent
-              stats={{
-                watching: stats.watching_count,
-                planToWatch: stats.plan_to_watch_count,
-                completed: stats.completed_count,
-                onHold: stats.on_hold_count,
-                dropped: stats.dropped_count,
-              }}
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      <div className="py-4 text-sm">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="font-semibold border-b pb-1 w-fit">Comments</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex gap-2">
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder={user ? "Leave a comment..." : "Sign in to leave a comment..."}
+                className="max-h-60"
+                disabled={!user}
+              />
+              <Button size={"icon"} disabled={comment === "" || !user} onClick={handleCommentSubmit}>
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="mr-12">
+              {currentUser.comments?.map((comment: Comment, index) => (
+                <div key={index} className="space-y-1 border-b p-3">
+                  <div className="flex items-center">
+                    <Button variant={"link"} asChild className="font-semibold p-0">
+                      <Link to={`/user/${comment.username}`}>{comment.username}</Link>
+                    </Button>
+                    <Dot className="text-muted-foreground w-4 h-4 shrink-0 mt-0.5" />
+                    <text className="text-muted-foreground">{timeAgo(comment.date)}</text>
+                    <div className="flex-grow flex justify-end">
+                      {(user?.username === comment.username || user?.username === currentUser.username) && (
+                        <Button
+                          size={"icon"}
+                          variant={"destructive"}
+                          className="w-4 h-4"
+                          onClick={() => handleCommentDelete(comment.comment_id)}
+                        >
+                          <X className="w-2 h-2" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <p>{comment.comment}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }
 

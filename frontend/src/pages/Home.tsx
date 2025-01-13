@@ -18,12 +18,12 @@ export default function Dashboard() {
 
             <div>
               <p className="text-2xl font-bold mb-3">Popular TV Shows</p>
-              <PopularShows type="tv" limit={10} />
+              <PopularShows type="tv" limit={15} />
             </div>
 
             <div>
               <p className="text-2xl font-bold mb-3">Popular Movies</p>
-              <PopularShows type="movie" limit={10} />
+              <PopularShows type="movie" limit={15} />
             </div>
           </div>
           <div className="w-full">

@@ -120,6 +120,8 @@ export default function Show({ is_movie }: ShowProps) {
           }
           return prevData;
         });
+
+        setComment("");
       }
     });
   };
@@ -203,7 +205,7 @@ export default function Show({ is_movie }: ShowProps) {
                     // Lock season and episode numbers to the last available values
                     const lastSeason = data.seasons[data.seasons.length - 1];
                     const lastEpisode = lastSeason.episode_count;
-                
+
                     setUserShowInfo({
                       ...userShowInfo,
                       list_type: value,

@@ -179,6 +179,15 @@ export const createTables = async (): Promise<void> => {
     FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS user_comments (
+    comment_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    target_user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    comment VARCHAR(1000),
+    date TIMESTAMP,
+    UNIQUE (user_id, date)
+  );
+
 CREATE OR REPLACE VIEW user_statistics AS
 SELECT 
     u.id AS user_id,

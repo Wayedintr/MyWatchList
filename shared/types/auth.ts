@@ -1,3 +1,5 @@
+import { Comment } from "./show";
+
 export interface LoginRequest {
   mail: string;
   password: string;
@@ -28,6 +30,7 @@ export interface UserResponse {
 export interface UserPublic {
   username: string;
   user_id: number;
+  comments: Comment[];
 }
 
 export interface UserPublicResponse {

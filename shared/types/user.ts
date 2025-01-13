@@ -1,5 +1,3 @@
-import { showShort } from "./show";
-
 export interface WatchActivity {
   activity_id: number;
   username: string;
@@ -54,4 +52,24 @@ export interface IncrementShowEpisodeResponse {
   message: string;
   tv_episode_number?: number;
   movie_completed?: boolean;
+}
+
+export interface MakeUserCommentRequest {
+  target_user_id: number;
+  comment: string;
+}
+
+export interface MakeUserCommentResponse {
+  message: string;
+  success: boolean;
+  comment_id: number;
+}
+
+export interface DeleteUserCommentRequest {
+  comment_id: number;
+}
+
+export interface DeleteUserCommentResponse {
+  message: string;
+  success: boolean;
 }

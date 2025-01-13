@@ -17,10 +17,14 @@ import {
 import {
   DeleteUserActivityRequest,
   DeleteUserActivityResponse,
+  DeleteUserCommentRequest,
+  DeleteUserCommentResponse,
   GetUserActivityRequest,
   GetUserActivityResponse,
   IncrementShowEpisodeRequest,
   IncrementShowEpisodeResponse,
+  MakeUserCommentRequest,
+  MakeUserCommentResponse,
 } from "@shared/types/user";
 import jwt from "jsonwebtoken";
 
@@ -36,16 +40,37 @@ userRouter.get("/info", async (req: Request, res: Response<UserPublicResponse>) 
       return res.status(400).json({ message: "Username is required" });
     }
 
-    const selectUserQuery = `SELECT username, id AS user_id FROM users WHERE username = $1`;
+    const selectUserQuery = `
+      SELECT u.username, u.id AS user_id
+      FROM users u
+      WHERE u.username = $1
+    `;
+
     const userResult = await withPoolConnection((client) => client.query(selectUserQuery, [username]));
 
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    const userId = userResult.rows[0].user_id;
+
+    const selectCommentsQuery = `
+      SELECT c.comment_id, c.comment, u.username, c.date
+      FROM user_comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.target_user_id = $1
+      ORDER BY c.date DESC
+    `;
+
+    const commentsResult = await withPoolConnection((client) => client.query(selectCommentsQuery, [userId]));
+
     res.status(200).json({
       message: "User found successfully.",
-      user: userResult.rows[0],
+      user: {
+        user_id: userResult.rows[0].user_id,
+        username: userResult.rows[0].username,
+        comments: commentsResult.rows,
+      },
     });
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -381,13 +406,13 @@ userRouter.get("/show-list", async (req: Request, res: Response<UserShowListResp
       JOIN shows s ON us.show_id = s.show_id
       LEFT JOIN seasons se 
              ON s.show_id = se.show_id AND se.season_number = us.season_number
-      WHERE u.id = $1
+      WHERE u.id = $1 AND us.list_type IS NOT NULL
     `;
     const parameters: (string | boolean)[] = [user_id.toString()];
 
     // Add optional filters dynamically
     if (list_type) {
-      selectUserShowListQuery += ` AND us.list_type = $${parameters.length + 1} AND us.list_type IS NOT NULL`;
+      selectUserShowListQuery += ` AND us.list_type = $${parameters.length + 1}`;
       parameters.push(list_type);
 
       if (list_type === "Watching") {
@@ -481,6 +506,73 @@ userRouter.post(
     } catch (error) {
       console.error("Error incrementing show episode:", error);
       res.status(500).json({ message: "Error incrementing show episode" });
+    }
+  }
+);
+
+userRouter.post(
+  "/make-comment",
+  async (req: Request<{}, {}, MakeUserCommentRequest>, res: Response<MakeUserCommentResponse>) => {
+    const token = req.cookies?.authToken;
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated", success: false, comment_id: -1 });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+      const { target_user_id, comment } = req.body;
+
+      const insertCommentQuery = `INSERT INTO user_comments (user_id, target_user_id, comment, date) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+      RETURNING comment_id`;
+
+      const insertCommentResult = await withPoolConnection((client) =>
+        client.query(insertCommentQuery, [decoded.id, target_user_id, comment])
+      );
+
+      if (insertCommentResult.rowCount === 0) {
+        return res.status(500).json({ message: "Error making comment", success: false, comment_id: -1 });
+      }
+
+      return res.status(200).json({
+        message: "Comment made successfully",
+        success: true,
+        comment_id: insertCommentResult.rows[0].comment_id,
+      });
+    } catch (error) {
+      console.error("Error making comment:", error);
+      res.status(403).json({ message: "Error making comment", success: false, comment_id: -1 });
+    }
+  }
+);
+
+userRouter.delete(
+  "/delete-comment",
+  async (req: Request<{}, {}, DeleteUserCommentRequest>, res: Response<DeleteUserCommentResponse>) => {
+    const token = req.cookies?.authToken;
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated", success: false });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+      const { comment_id } = req.query as unknown as DeleteUserCommentRequest;
+
+      const deleteCommentQuery = `DELETE FROM user_comments WHERE comment_id = $1 AND (user_id = $2 OR target_user_id = $2)`;
+
+      const deleteCommentResult = await withPoolConnection((client) =>
+        client.query(deleteCommentQuery, [comment_id, decoded.id])
+      );
+
+      if (deleteCommentResult.rowCount === 0) {
+        return res.status(500).json({ message: "Error deleting comment", success: false });
+      }
+
+      return res.status(200).json({ message: "Comment deleted successfully", success: true });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(403).json({ message: "Error deleting comment", success: false });
     }
   }
 );
