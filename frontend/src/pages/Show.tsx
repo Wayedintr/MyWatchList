@@ -25,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { timeAgo } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import ReactCountryFlag from "react-country-flag";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ShowProps {
   is_movie: boolean;
@@ -351,12 +353,36 @@ export default function Show({ is_movie }: ShowProps) {
             )}
             {data.episode_run_time && (
               <p className="font-semibold text-muted-foreground">
-                Rating: <span className="font-normal">{data.vote_average}/10</span>
+                Rating: <span className="font-normal">{data.vote_average?.toFixed(1)}/10</span>
               </p>
             )}
             {data.episode_run_time && (
               <p className="font-semibold text-muted-foreground">
                 Episode Run Time: <span className="font-normal">{data.episode_run_time} minutes</span>
+              </p>
+            )}
+            {data.origin_country?.split(",")?.length! > 0 && (
+              <p className="font-semibold text-muted-foreground flex gap-1">
+                <div>Origin Country:</div>
+                <div className="space-x-1">
+                  {data.origin_country?.split(",")?.map((country) => (
+                    <TooltipProvider key={country}>
+                      <Tooltip>
+                        <TooltipTrigger className="cursor-default">
+                          <ReactCountryFlag
+                            style={{
+                              fontSize: "1.25em",
+                              lineHeight: "1.25em",
+                            }}
+                            countryCode={country}
+                            svg
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>{country}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
               </p>
             )}
           </CardContent>
@@ -396,7 +422,7 @@ export default function Show({ is_movie }: ShowProps) {
                                   {episode.vote_average && (
                                     <Badge className="space-x-1">
                                       <Star className="w-3 h-3 shrink-0" />
-                                      <p>{episode.vote_average}</p>
+                                      <p>{episode.vote_average.toFixed(1)}</p>
                                     </Badge>
                                   )}
                                   {episode.runtime && (
@@ -418,17 +444,18 @@ export default function Show({ is_movie }: ShowProps) {
 
                                 {((userShowInfo.season_number as number) > season.season_number! ||
                                   ((userShowInfo.season_number as number) === season.season_number! &&
-                                    (userShowInfo.episode_number as number) > episode.episode_number!)) && (
-                                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                                    <Badge className="bg-accent">Watched</Badge>
-                                  </div>
-                                )}
+                                    (userShowInfo.episode_number as number) >= episode.episode_number!)) &&
+                                  season.name !== "Specials" && (
+                                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                      <Badge className="bg-accent">Watched</Badge>
+                                    </div>
+                                  )}
                               </div>
 
                               <div className="py-1 px-2 space-y-1">
                                 <p className="font-semibold">
                                   Episode {episode.episode_number}
-                                  {episode.name !== `Episode ${episode.episode_number}` && " - "+ episode.name}
+                                  {episode.name !== `Episode ${episode.episode_number}` && " - " + episode.name}
                                 </p>
                                 <ScrollArea type="always" className="h-24 pr-4">
                                   <p className="text-muted-foreground">{episode.overview}</p>
