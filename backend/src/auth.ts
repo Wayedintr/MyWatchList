@@ -50,14 +50,14 @@ authRouter.post("/login", async (req: Request<LoginRequest>, res: Response<Login
     }
 
     // Generate JWT with user information
-    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "3m" });
 
     // Set token in HTTP-only cookie
     res.cookie("authToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3600000, // 1 hour
+      maxAge: 3600000 * 24 * 90, // 3 months
     });
 
     res.status(200).json({
@@ -75,6 +75,7 @@ authRouter.post("/login", async (req: Request<LoginRequest>, res: Response<Login
 });
 
 // Register Function
+// Register Function
 authRouter.post("/register", async (req: Request<RegisterRequest>, res: Response<LoginResponse>) => {
   const { username, password, mail } = req.body;
 
@@ -82,39 +83,49 @@ authRouter.post("/register", async (req: Request<RegisterRequest>, res: Response
     return res.status(400).json({ message: "All fields are required." });
   }
 
+  if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+    return res.status(400).json({ message: "Invalid username." });
+  }
+
   try {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Check for conflicts on username or mail
+    const checkUserConflictQuery = `
+      SELECT username, mail FROM users WHERE username = $1 OR mail = $2
+    `;
+    const conflictResult = await withPoolConnection((client) => client.query(checkUserConflictQuery, [username, mail]));
+
+    if (conflictResult.rows.length > 0) {
+      const conflictFields = conflictResult.rows
+        .map((row) => (row.username === username ? "Username" : "Mail"))
+        .join(" and ");
+      return res.status(409).json({ message: `${conflictFields} already exists.` });
+    }
+
     // Insert the new user into the database
     const insertUserQuery = `
-          INSERT INTO users (username, password, mail)
-          VALUES ($1, $2, $3)
-          ON CONFLICT (mail) DO NOTHING;
-        `;
+      INSERT INTO users (username, password, mail)
+      VALUES ($1, $2, $3)
+      RETURNING id, mail, username
+    `;
 
     const result = await withPoolConnection((client) =>
       client.query(insertUserQuery, [username, hashedPassword, mail])
     );
 
-    if (result.rowCount === 0) {
-      return res.status(409).json({ message: "Email already registered." });
-    }
-
-    const selectUserQuery = `SELECT id, mail, username FROM users WHERE mail = $1`;
-    const userResult = await withPoolConnection((client) => client.query(selectUserQuery, [mail]));
-
-    const user = userResult.rows[0];
+    const user = result.rows[0];
 
     // Generate JWT with user information
-    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "3m" });
 
     // Set token in HTTP-only cookie
     res.cookie("authToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3600000,
+      maxAge: 3600000 * 24 * 90, // 3 months
     });
 
     res.status(201).json({

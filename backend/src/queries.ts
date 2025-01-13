@@ -60,7 +60,7 @@ export const createTables = async (): Promise<void> => {
   const createTablesQuery = `
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE ,
+    username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     mail VARCHAR(255) NOT NULL UNIQUE,
     CONSTRAINT username_validity CHECK (
