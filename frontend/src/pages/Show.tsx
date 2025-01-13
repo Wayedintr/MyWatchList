@@ -427,7 +427,8 @@ export default function Show({ is_movie }: ShowProps) {
 
                               <div className="py-1 px-2 space-y-1">
                                 <p className="font-semibold">
-                                  Episode {episode.episode_number} - {episode.name}
+                                  Episode {episode.episode_number}
+                                  {episode.name !== `Episode ${episode.episode_number}` && " - "+ episode.name}
                                 </p>
                                 <ScrollArea type="always" className="h-24 pr-4">
                                   <p className="text-muted-foreground">{episode.overview}</p>
