@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/pagination";
 import { search as searchApi } from "@/lib/api";
 import { SearchApiResponse, SearchRequest as SearchRequestType, SearchResponse } from "@shared/types/show";
+import { Image } from "@/components/skeleton-img";
+import { Card } from "@/components/ui/card";
 
 export default function Search() {
   const [params] = useSearchParams();
@@ -26,8 +28,6 @@ export default function Search() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     setSearchRequest({
@@ -69,10 +69,6 @@ export default function Search() {
       .finally(() => {
         setLoading(false);
       });
-  };
-
-  const handleNavigate = (type: "movie" | "tv", id: number) => {
-    navigate(`/show/${type}/${id}`);
   };
 
   const handlePaginationClick = (page: number) => {
@@ -119,7 +115,7 @@ export default function Search() {
   }, [searchRequest.page]);
 
   return (
-    <div className="flex flex-col items-center mt-8">
+    <div className="flex flex-col items-center mt-8 mx-4 md:mx-8 lg:mx-16 xl:mx-40">
       <h1 className="text-xl font-bold mb-4">Search for Movies or TV Shows</h1>
       <form
         className="flex items-center mb-4"
@@ -132,7 +128,7 @@ export default function Search() {
           type="text"
           value={searchRequest.query || ""}
           onChange={(e) => setSearchRequest({ ...searchRequest, query: e.target.value })}
-          placeholder="Enter movie or TV show name"
+          placeholder="Enter show name"
           className="w-[40rem] mr-4"
         />
         <Button onClick={handleSearch} disabled={loading}>
@@ -156,22 +152,24 @@ export default function Search() {
 
       {error && <p className="text-red-500 mt-4">{error}</p>}
 
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 mb-4">
         {result?.results &&
           result.results.map((result) => (
-            <div
-              key={result.id}
-              className="p-4 border rounded cursor-pointer"
-              onClick={() => handleNavigate(searchRequest.type, result.id)}
-            >
-              <img
-                src={`https://image.tmdb.org/t/p/w200${result.poster_path}`}
-                alt={result.title || result.name}
-                className="mb-2"
-              />
-              <h2 className="font-bold">{result.title || result.name}</h2>
-              <p>{result.release_date || result.first_air_date}</p>
-            </div>
+            <Link to={`/show/${params.get("type") === "movie" ? "movie" : "tv"}/${result.id}`}>
+              <Card key={result.id} className="cursor-pointer overflow-clip rounded-md min-h-[22rem]">
+                <Image
+                  src={`https://image.tmdb.org/t/p/w200${result.poster_path}`}
+                  alt={result.title || result.name}
+                  className="w-full aspect-[2/3] object-cover"
+                />
+                <h2 className="font-bold w-full text-center p-2.5">
+                    {result.title || result.name}{" "}
+                    <span className="font-semibold text-muted-foreground">
+                      ({(result.release_date || result.first_air_date)?.split("-")[0]})
+                    </span>
+                </h2>
+              </Card>
+            </Link>
           ))}
       </div>
 
