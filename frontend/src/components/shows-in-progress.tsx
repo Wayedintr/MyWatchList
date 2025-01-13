@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-provider";
 export function ShowsInProgress({ className, ...props }: {} & React.HTMLAttributes<HTMLDivElement>) {
   const { user } = useAuth();
   const [showList, setShowList] = useState<showShort[]>([]);
-  const [loading, setLoading] = useState(true); // Tracks loading state
+  const [_, setLoading] = useState(true); // Tracks loading state
 
   useEffect(() => {
     setLoading(true);

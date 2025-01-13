@@ -73,7 +73,7 @@ export function Component({ stats }: PieChartComponentProps) {
               nameKey="category"
               innerRadius={60}
               outerRadius={80}
-              paddingAngle={5}
+              paddingAngle={0}
               strokeWidth={5}
             >
               <Label

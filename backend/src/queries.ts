@@ -179,55 +179,59 @@ export const createTables = async (): Promise<void> => {
     FOREIGN KEY (show_id, is_movie) REFERENCES shows(show_id, is_movie) ON DELETE CASCADE
   );
 
-  CREATE OR REPLACE VIEW user_statistics AS
-    SELECT 
+CREATE OR REPLACE VIEW user_statistics AS
+SELECT 
     u.id AS user_id,
     u.username,
+
+    -- Count the number of entries for each list type
     COUNT(CASE WHEN us.list_type = 'Watching' THEN 1 END) AS watching_count,
     COUNT(CASE WHEN us.list_type = 'Completed' THEN 1 END) AS completed_count,
     COUNT(CASE WHEN us.list_type = 'On Hold' THEN 1 END) AS on_hold_count,
     COUNT(CASE WHEN us.list_type = 'Dropped' THEN 1 END) AS dropped_count,
-    COUNT(CASE WHEN us.list_type = 'Plan to Watch' THEN 1 END) AS plan_to_watch_count,
-    COUNT(*) AS total_entries,
+    COUNT(CASE WHEN us.list_type = 'Plan To Watch' THEN 1 END) AS plan_to_watch_count,
 
-    -- Total episodes watched calculation
-    SUM(
-        COALESCE(
-            (SELECT SUM(s.episode_count)
-             FROM seasons s
-             WHERE s.show_id = us.show_id AND s.is_movie = FALSE 
-               AND s.season_number < us.season_number),
-            0
+    -- Total entries
+    COUNT(us.list_type) AS total_entries,
+
+    -- Total episodes watched
+    COALESCE(SUM(
+        (
+            SELECT SUM(s.episode_count)
+            FROM seasons s
+            WHERE s.show_id = us.show_id 
+              AND s.is_movie = FALSE
+              AND s.season_number < COALESCE(us.season_number, 0)
         ) + us.episode_number
-    ) AS total_episodes_watched,
+    ), 0) AS total_episodes_watched,
 
-    -- Calculate total runtime watched in days (runtime from episodes table)
-    ROUND(
-        SUM(
-            COALESCE(
-                (SELECT SUM(e.runtime)
-                 FROM episodes e
-                 WHERE e.show_id = us.show_id AND e.is_movie = FALSE
-                   AND e.season_number < us.season_number),
-                0
-            ) + 
-            (SELECT SUM(e.runtime)
-             FROM episodes e
-             WHERE e.show_id = us.show_id AND e.is_movie = FALSE
-               AND e.season_number = us.season_number
-               AND e.episode_number <= us.episode_number)
-        ) / 1440.0, 2
-    ) AS days_watched,
+    -- Total runtime watched in days
+    COALESCE(SUM(
+        (
+            SELECT SUM(e.runtime)
+            FROM episodes e
+            WHERE e.show_id = us.show_id 
+              AND e.is_movie = FALSE
+              AND e.season_number < COALESCE(us.season_number, 0)
+        ) + 
+        (
+            SELECT SUM(e.runtime)
+            FROM episodes e
+            WHERE e.show_id = us.show_id 
+              AND e.is_movie = FALSE
+              AND e.season_number = COALESCE(us.season_number, 0)
+              AND e.episode_number <= COALESCE(us.episode_number, 0)
+        )
+    ), 0) / 1440.0 AS days_watched,
 
     -- Average score
     ROUND(AVG(us.score)::NUMERIC, 2) AS mean_score
-    FROM 
+
+FROM 
     users u
-    LEFT JOIN 
+LEFT JOIN 
     user_shows us ON u.id = us.user_id
-    LEFT JOIN 
-    shows s ON us.show_id = s.show_id AND us.is_movie = s.is_movie
-    GROUP BY 
+GROUP BY 
     u.id, u.username;
 
 
