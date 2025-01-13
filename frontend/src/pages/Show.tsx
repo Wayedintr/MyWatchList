@@ -14,7 +14,7 @@ import {
   Episode,
   Comment,
 } from "@shared/types/show";
-import { Clock, Dot, Loader2, MinusCircle, PlusCircle, Send, Star, X } from "lucide-react";
+import { Clock, Dot, MinusCircle, PlusCircle, Send, Star, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +24,7 @@ import { Image } from "@/components/skeleton-img";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { timeAgo } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ShowProps {
   is_movie: boolean;
@@ -32,7 +33,7 @@ interface ShowProps {
 export default function Show({ is_movie }: ShowProps) {
   const { user } = useAuth();
   const { show_id } = useParams<{ show_id: string }>();
-  const [data, setData] = useState<ShowType | null>(null);
+  const [data, setData] = useState<ShowType>({} as ShowType);
   const [userShowInfo, setUserShowInfo] = useState<UserShowInfo>({
     episode_count: 0,
     episode_number: null,
@@ -41,14 +42,28 @@ export default function Show({ is_movie }: ShowProps) {
     score: null,
   });
 
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [userShowInfoLoading, setUserShowInfoLoading] = useState<boolean>(true);
 
   const [comment, setComment] = useState<string>("");
 
   const infoContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Scroll to top smoothly
+    scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    const fetchBasicShowInfo = async () => {
+      return showApi({
+        show_id: show_id ? show_id : -1,
+        type: is_movie ? "movie" : "tv",
+        mode: "basic",
+      } as ShowRequest);
+    };
+
     const fetchShowData = async () => {
       return showApi({ show_id: show_id ? show_id : -1, type: is_movie ? "movie" : "tv" } as ShowRequest);
     };
@@ -61,28 +76,27 @@ export default function Show({ is_movie }: ShowProps) {
     };
 
     setLoading(true);
-    setError(null);
 
-    Promise.all([fetchShowData(), fetchListData()])
-      .then(([showData, listData]) => {
-        if (showData.show) {
-          console.log(showData.message);
-          setData(showData.show);
-        } else {
-          setError(showData.message);
-        }
-
-        if (listData?.show_user_info) {
-          console.log(listData);
-          setUserShowInfo(listData.show_user_info);
-        }
-      })
-      .catch((err) => {
-        setError(err.message || "An error occurred");
-      })
-      .finally(() => {
+    fetchBasicShowInfo().then((res) => {
+      if (res.show) {
+        setData(res.show);
         setLoading(false);
-      });
+      }
+    });
+
+    fetchShowData().then((res) => {
+      if (res.show) {
+        setData(res.show);
+        setLoading(false);
+      }
+    });
+
+    fetchListData().then((res) => {
+      if (res?.show_user_info) {
+        setUserShowInfo(res.show_user_info);
+      }
+    });
+    setUserShowInfoLoading(false);
   }, [show_id, is_movie]);
 
   useEffect(() => {
@@ -142,16 +156,6 @@ export default function Show({ is_movie }: ShowProps) {
     });
   };
 
-  if (loading || !data) {
-    if (error) {
-      return <div>Error: {error}</div>;
-    }
-    return (
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-        <Loader2 className="animate-spin w-32 h-32" />
-      </div>
-    );
-  }
   return (
     <div className="container">
       <img
@@ -163,35 +167,34 @@ export default function Show({ is_movie }: ShowProps) {
       />
 
       <div className="min-h-[30rem] md:h-[30rem] flex py-4 gap-10" ref={infoContainerRef}>
-        <img
+        <Image
           src={`https://image.tmdb.org/t/p/w500${data.poster_path}`}
           className="object-cover hidden md:block rounded-md aspect-[2/3] w-80 shrink-0"
         />
 
-        <div className="flex flex-col pb-1 gap-10">
-          <div>
-            <h1 className="text-4xl font-bold">
-              {data.title}{" "}
-              <span className="text-muted-foreground font-semibold">{`(${data.release_date?.split("-")[0]})`}</span>
-            </h1>
-            <h2 className="text-sm text-muted-foreground">{data.original_title}</h2>
-            <div className="space-x-1">
-              {data.genres.map((genre, index) => (
-                <Badge key={index} className="cursor-default">
-                  {genre}
-                </Badge>
-              ))}
+        <div className="flex flex-col pb-1 gap-10 w-full">
+          {data.show_id && (
+            <div>
+              <h1 className="text-4xl font-bold">
+                {data.title}{" "}
+                <span className="text-muted-foreground font-semibold">{`(${data.release_date?.split("-")[0]})`}</span>
+              </h1>
+              <h2 className="text-sm text-muted-foreground">{data.original_title}</h2>
+              <div className="space-x-1">
+                {data.genres?.map((genre, index) => (
+                  <Badge key={index} className="cursor-default">
+                    {genre}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div
-            className={`flex-grow flex flex-col md:flex-row items-start md:items-center gap-2 ${
-              !user && "pointer-events-none select-none opacity-80"
-            }`}
-          >
+          <div className={`flex-grow flex flex-col md:flex-row items-start md:items-center gap-2`}>
             <div className="flex flex-col gap-1">
               <Label className="font-bold ml-0.5">Status</Label>
               <Combobox
+                disabled={userShowInfoLoading || !user}
                 value={userShowInfo.list_type}
                 elements={[
                   { value: "Plan To Watch", label: "Plan To Watch" },
@@ -232,11 +235,12 @@ export default function Show({ is_movie }: ShowProps) {
               />
             </div>
 
-            {!is_movie && userShowInfo.list_type !== "Plan To Watch" && (
+            {!is_movie && data.seasons && userShowInfo.list_type !== "Plan To Watch" && (
               <>
                 <div className="flex flex-col gap-1">
                   <Label className="font-bold ml-0.5">Season</Label>
                   <Combobox
+                    disabled={userShowInfoLoading || !user}
                     value={userShowInfo.season_number?.toString()}
                     elements={data.seasons.map((season) => ({
                       value: season.season_number?.toString(),
@@ -309,6 +313,7 @@ export default function Show({ is_movie }: ShowProps) {
               <div className="flex flex-col gap-1">
                 <Label className="font-bold ml-0.5">Score</Label>
                 <Combobox
+                  disabled={userShowInfoLoading || !user}
                   value={userShowInfo.score?.toString()}
                   elements={Array.from({ length: 10 }, (_, i) => ({
                     value: (i + 1).toString(),
@@ -324,10 +329,12 @@ export default function Show({ is_movie }: ShowProps) {
             </div>
           </div>
 
-          <div>
-            <label className="font-bold">Overview</label>
-            <p>{data.overview}</p>
-          </div>
+          {data.overview && (
+            <div>
+              <label className="font-bold">Overview</label>
+              <p>{data.overview}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -356,82 +363,93 @@ export default function Show({ is_movie }: ShowProps) {
         </Card>
 
         {!is_movie && (
-          <Card className="w-full h-fit">
-            <CardContent className="py-4">
-              <Tabs defaultValue={data.seasons[0]?.name!}>
-                <TabsList className="w-full flex-wrap h-fit justify-start">
-                  {data.seasons.map((season: Season, index) => (
-                    <TabsTrigger key={index} value={season.name!}>
-                      {season.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
-                {data.seasons.map((season: Season, index) => (
-                  <TabsContent key={index} value={season.name!}>
-                    <ScrollArea className="h-96 pr-4 mt-2">
-                      {season.episodes.map((episode: Episode, index) => (
-                        <Card
-                          key={index}
-                          className={`w-full bg-background h-32 overflow-clip flex ${index !== 0 && "mt-2"}`}
-                        >
-                          <div className="h-full w-60 shrink-0 relative">
-                            <Image
-                              src={`https://image.tmdb.org/t/p/w500${
-                                episode.still_path || season.poster_path || data.poster_path
-                              }`}
-                              alt={episode.name!}
-                              className="h-full w-full object-cover shrink-0 absolute top-0 left-0"
-                            />
-                            <div className="relative p-1 space-x-1">
-                              {episode.vote_average && (
-                                <Badge className="space-x-1">
-                                  <Star className="w-3 h-3 shrink-0" />
-                                  <p>{episode.vote_average}</p>
-                                </Badge>
-                              )}
-                              {episode.runtime && (
-                                <Badge className="space-x-1">
-                                  <Clock className="w-3 h-3 shrink-0" />
-                                  <p>{episode.runtime} min</p>
-                                </Badge>
-                              )}
-                              {episode.air_date && (
-                                <Badge>
-                                  {new Intl.DateTimeFormat("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  }).format(new Date(episode.air_date!))}
-                                </Badge>
-                              )}
-                            </div>
-
-                            {((userShowInfo.season_number as number) > season.season_number! ||
-                              ((userShowInfo.season_number as number) === season.season_number! &&
-                                (userShowInfo.episode_number as number) > episode.episode_number!)) && (
-                              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                                <Badge className="bg-accent">Watched</Badge>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="py-1 px-2 space-y-1">
-                            <p className="font-semibold">
-                              Episode {episode.episode_number} - {episode.name}
-                            </p>
-                            <ScrollArea type="always" className="h-24 pr-4">
-                              <p className="text-muted-foreground">{episode.overview}</p>
-                            </ScrollArea>
-                          </div>
-                        </Card>
+          <>
+            {data.seasons ? (
+              <Card className="w-full h-fit">
+                <CardContent className="py-4">
+                  <Tabs defaultValue={data.seasons[0]?.name!}>
+                    <TabsList className="w-full flex-wrap h-fit justify-start">
+                      {data.seasons.map((season: Season, index) => (
+                        <TabsTrigger key={index} value={season.name!}>
+                          {season.name}
+                        </TabsTrigger>
                       ))}
-                    </ScrollArea>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </CardContent>
-          </Card>
+                    </TabsList>
+
+                    {data.seasons.map((season: Season, index) => (
+                      <TabsContent key={index} value={season.name!}>
+                        <ScrollArea className="h-96 pr-4 mt-2">
+                          {season.episodes.map((episode: Episode, index) => (
+                            <Card
+                              key={index}
+                              className={`w-full bg-background h-32 overflow-clip flex ${index !== 0 && "mt-2"}`}
+                            >
+                              <div className="h-full w-60 shrink-0 relative">
+                                <Image
+                                  src={`https://image.tmdb.org/t/p/w500${
+                                    episode.still_path || season.poster_path || data.poster_path
+                                  }`}
+                                  alt={episode.name!}
+                                  className="h-full w-full object-cover shrink-0 absolute top-0 left-0"
+                                />
+                                <div className="relative p-1 space-x-1">
+                                  {episode.vote_average && (
+                                    <Badge className="space-x-1">
+                                      <Star className="w-3 h-3 shrink-0" />
+                                      <p>{episode.vote_average}</p>
+                                    </Badge>
+                                  )}
+                                  {episode.runtime && (
+                                    <Badge className="space-x-1">
+                                      <Clock className="w-3 h-3 shrink-0" />
+                                      <p>{episode.runtime} min</p>
+                                    </Badge>
+                                  )}
+                                  {episode.air_date && (
+                                    <Badge>
+                                      {new Intl.DateTimeFormat("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      }).format(new Date(episode.air_date!))}
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {((userShowInfo.season_number as number) > season.season_number! ||
+                                  ((userShowInfo.season_number as number) === season.season_number! &&
+                                    (userShowInfo.episode_number as number) > episode.episode_number!)) && (
+                                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                    <Badge className="bg-accent">Watched</Badge>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="py-1 px-2 space-y-1">
+                                <p className="font-semibold">
+                                  Episode {episode.episode_number} - {episode.name}
+                                </p>
+                                <ScrollArea type="always" className="h-24 pr-4">
+                                  <p className="text-muted-foreground">{episode.overview}</p>
+                                </ScrollArea>
+                              </div>
+                            </Card>
+                          ))}
+                        </ScrollArea>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </CardContent>
+              </Card>
+            ) : (
+              <Skeleton className="w-full p-4">
+                <Skeleton className="w-full h-10 mb-6" />
+                <Skeleton className="w-full h-28 mb-3" />
+                <Skeleton className="w-full h-28 mb-3" />
+                <Skeleton className="w-full h-28 mb-3" />
+              </Skeleton>
+            )}
+          </>
         )}
       </div>
 
@@ -455,7 +473,14 @@ export default function Show({ is_movie }: ShowProps) {
             </div>
 
             <div className="mr-12">
-              {data.comments.map((comment: Comment, index) => (
+              {!data.comments && (
+                <>
+                  <Skeleton className="w-full h-10 mb-2" />
+                  <Skeleton className="w-full h-10 mb-2" />
+                  <Skeleton className="w-full h-10 mb-2" />
+                </>
+              )}
+              {data.comments?.map((comment: Comment, index) => (
                 <div key={index} className="space-y-1 border-b p-3">
                   <div className="flex items-center">
                     <Button variant={"link"} asChild className="font-semibold p-0">

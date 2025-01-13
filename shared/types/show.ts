@@ -29,6 +29,7 @@ export interface Show {
 export interface ShowRequest {
   show_id: number;
   type: "movie" | "tv";
+  mode: "basic" | "full";
 }
 
 export interface ShowResponse {

@@ -50,14 +50,14 @@ authRouter.post("/login", async (req: Request<LoginRequest>, res: Response<Login
     }
 
     // Generate JWT with user information
-    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "3m" });
+    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "24h" });
 
     // Set token in HTTP-only cookie
     res.cookie("authToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3600000 * 24 * 90, // 3 months
+      maxAge: 3600000 * 24, // 1 day
     });
 
     res.status(200).json({
@@ -118,14 +118,14 @@ authRouter.post("/register", async (req: Request<RegisterRequest>, res: Response
     const user = result.rows[0];
 
     // Generate JWT with user information
-    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "3m" });
+    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "24h" });
 
     // Set token in HTTP-only cookie
     res.cookie("authToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3600000 * 24 * 90, // 3 months
+      maxAge: 3600000 * 24, // 1 day
     });
 
     res.status(201).json({

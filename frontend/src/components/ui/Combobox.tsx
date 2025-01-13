@@ -18,6 +18,7 @@ interface ComboboxProps {
   onMouseEnter?: (value: any) => void;
   onMouseLeave?: (value: any) => void;
   disableSearch?: boolean;
+  disabled?: boolean;
 }
 
 export function Combobox(props: ComboboxProps) {
@@ -32,7 +33,13 @@ export function Combobox(props: ComboboxProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className="justify-between w-[200px]">
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="justify-between w-[200px]"
+          disabled={props.disabled}
+        >
           <span className="truncate">
             {props.value
               ? props.elements.find((element) => element.value === props.value)?.label

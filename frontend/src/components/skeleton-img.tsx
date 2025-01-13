@@ -11,10 +11,11 @@ export const Image: React.FC<ImageProps> = ({ src, className, ...rest }) => {
 
   return (
     <>
-      <Skeleton className={`${className} ${loading ? "" : "hidden"}`} />
+      {loading && <Skeleton className={`${className}`} />}
       <img
         src={src}
-        className={`${className} ${loading ? "hidden" : ""}`}
+        className={`${loading ? "hidden" : ""} ${className}`}
+        style={loading ? { width: "0", height: "0" } : {}}
         onLoad={() => {
           setLoading(false);
         }}

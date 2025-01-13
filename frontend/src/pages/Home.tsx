@@ -2,9 +2,18 @@ import { PopularShows } from "@/components/popular-shows";
 import { ShowsInProgress } from "@/components/shows-in-progress";
 import { UserActivity } from "@/components/user-activity";
 import { useAuth } from "@/contexts/auth-provider";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const { user } = useAuth();
+
+  useEffect(() => {
+    // Scroll to top smoothly
+    scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, []);
 
   return (
     <div className="container py-8 flex flex-col md:flex-row-reverse gap-8">

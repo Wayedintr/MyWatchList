@@ -29,13 +29,13 @@ export const showRouter = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
 
 showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
-  const { type, show_id } = req.query as unknown as ShowRequest;
+  const { type, show_id, mode } = req.query as unknown as ShowRequest;
 
   if (!type || !show_id) {
     return res.status(400).json({ message: "Type and ID are required" });
   }
 
-  await insertShowById(show_id, type === "movie");
+  await insertShowById(show_id, type === "movie", mode === "basic");
 
   let response = await withPoolConnection((client) =>
     client.query("SELECT * FROM shows WHERE is_movie = $1 AND show_id = $2", [type === "movie", show_id])
@@ -58,6 +58,21 @@ showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
   );
   show.genres = response.rows.map((row) => row.name);
 
+  response = await withPoolConnection((client) =>
+    client.query(
+      `SELECT sc.comment_id, sc.comment, sc.date, u.username FROM show_comments sc
+       JOIN users u ON sc.user_id = u.id
+       WHERE sc.show_id = $1 AND sc.is_movie = $2
+       ORDER BY sc.date DESC`,
+      [show_id, type === "movie"]
+    )
+  );
+  show.comments = response.rows;
+
+  if (mode === "basic") {
+    return res.status(200).json({ message: "Show found", show });
+  }
+
   if (type === "tv") {
     response = await withPoolConnection((client) =>
       client.query("SELECT * FROM seasons WHERE show_id = $1 ORDER BY season_number", [show_id])
@@ -75,17 +90,6 @@ showRouter.get("/info", async (req: Request, res: Response<ShowResponse>) => {
       }
     }
   }
-
-  response = await withPoolConnection((client) =>
-    client.query(
-      `SELECT sc.comment_id, sc.comment, sc.date, u.username FROM show_comments sc
-       JOIN users u ON sc.user_id = u.id
-       WHERE sc.show_id = $1 AND sc.is_movie = $2
-       ORDER BY sc.date DESC`,
-      [show_id, type === "movie"]
-    )
-  );
-  show.comments = response.rows;
 
   return res.status(200).json({ message: "Show found", show });
 });
