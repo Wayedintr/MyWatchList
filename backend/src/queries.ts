@@ -344,7 +344,7 @@ const insertEpisodesBySeason = async (showId: number, seasonNumber: number, is_m
   }
 };
 
-export const insertShowById = async (showId: number, is_movie: boolean): Promise<void> => {
+export const insertShowById = async (showId: number, is_movie: boolean, basic: boolean = false): Promise<void> => {
   if (showTimeouts.has(showId)) {
     console.log(`[INFO] Show ID ${showId} is in timeout, skipping...`);
     return;
@@ -451,8 +451,7 @@ export const insertShowById = async (showId: number, is_movie: boolean): Promise
 
       await client.query(insertShowQuery, insertShowValues);
 
-      if (show.genres && show.genres.length > 0) {
-        // Batch insert into genres table
+      if (!basic && show.genres && show.genres.length > 0) {
         const genresValues = show.genres
           .map((genre: any) => `(${genre.id}, '${genre.name.replace(/'/g, "''")}')`)
           .join(", ");
@@ -463,7 +462,6 @@ export const insertShowById = async (showId: number, is_movie: boolean): Promise
           ON CONFLICT (id) DO NOTHING;
         `;
 
-        // Batch insert into show_genres table
         const showGenresValues = show.genres.map((genre: any) => `(${showId}, ${is_movie}, ${genre.id})`).join(", ");
 
         const insertShowGenresQuery = `
@@ -473,7 +471,6 @@ export const insertShowById = async (showId: number, is_movie: boolean): Promise
         `;
 
         await withPoolConnection(async (client: PoolClient) => {
-          // Execute both batch queries
           if (genresValues) {
             await client.query(insertGenresQuery);
           }
@@ -485,8 +482,7 @@ export const insertShowById = async (showId: number, is_movie: boolean): Promise
         console.log(`[SUCCESS] Genres and show genres for show ID ${showId} inserted successfully.`);
       }
 
-      if (!is_movie && show.seasons && show.seasons.length > 0) {
-        // Prepare batched insert for seasons
+      if (!basic && !is_movie && show.seasons && show.seasons.length > 0) {
         const seasonsValues = show.seasons
           .map(
             (season: Season) =>
@@ -519,23 +515,19 @@ export const insertShowById = async (showId: number, is_movie: boolean): Promise
           prev.season_number > curr.season_number ? prev : curr
         );
 
-        // Check if all seasons are already inserted
         const result = await client.query(`SELECT COUNT(*) FROM seasons WHERE show_id = $1 AND is_movie = $2`, [
           showId,
           is_movie,
         ]);
         const insertedSeasonsCount = parseInt(result.rows[0].count, 10);
 
-        // Insert or update seasons
         await client.query(insertSeasonsQuery);
 
         if (insertedSeasonsCount === show.seasons.length) {
-          // Only insert episodes for the last season if all seasons are already inserted
           console.log(`[INFO] All seasons for show ID ${showId} are already inserted.`);
           console.log(`[INFO] Processing episodes for the last season: ${lastSeason.season_number}.`);
           await insertEpisodesBySeason(showId, lastSeason.season_number, is_movie);
         } else {
-          // Insert episodes for all seasons
           console.log(`[INFO] Inserting episodes for all seasons of show ID ${showId}.`);
           for (const season of show.seasons) {
             await insertEpisodesBySeason(showId, season.season_number, is_movie);
@@ -545,7 +537,9 @@ export const insertShowById = async (showId: number, is_movie: boolean): Promise
         console.log(`[SUCCESS] Seasons and episodes for show ID ${showId} processed successfully.`);
       }
 
-      showTimeouts.set(showId, true);
+      if (!basic) {
+        showTimeouts.set(showId, true);
+      }
       console.log(`[SUCCESS] Show with ID ${showId} inserted successfully.`);
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
