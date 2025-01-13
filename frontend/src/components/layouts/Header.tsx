@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-provider";
-import { ArrowRight, BookOpen, ChevronDown, Layers2, LogOut, Pin, Search, User, UserPen } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, Layers2, LogOut, Search, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function Header() {
@@ -86,10 +86,6 @@ export function Header() {
             </div>
           </div>
         </form>
-        {/*<Avatar>
-          <AvatarImage src="https://avatars.githubusercontent.com/u/76536654?v=4" />
-          <AvatarFallback>BY</AvatarFallback>
-        </Avatar></header>*/}
         <UserDropdown />
       </div>
     </header>
@@ -137,17 +133,6 @@ function UserDropdown() {
           <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate("/statistics")}>
             <BookOpen size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
             <span>Statistics</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem className="flex items-center gap-2">
-            <Pin size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
-            <span>Option 1</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem className="flex items-center gap-2">
-            <UserPen size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
-            <span>Option 2</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
