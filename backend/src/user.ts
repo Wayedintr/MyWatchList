@@ -383,6 +383,10 @@ userRouter.get("/show-list", async (req: Request, res: Response<UserShowListResp
     if (list_type) {
       selectUserShowListQuery += ` AND us.list_type = $${parameters.length + 1}`;
       parameters.push(list_type);
+
+      if (list_type === "Watching") {
+        selectUserShowListQuery += ` AND us.season_number IS NOT NULL`;
+      }
     }
     if (show_type) {
       selectUserShowListQuery += ` AND us.is_movie = $${parameters.length + 1}`;
@@ -444,10 +448,10 @@ userRouter.post(
       if (type === "tv") {
         const incrementShowEpisodeQuery = `
         UPDATE user_shows
-        SET episode_number = episode_number + 1
+        SET episode_number = COALESCE(episode_number, 0) + 1
         WHERE user_id = $1 AND show_id = $2 AND is_movie = false
         RETURNING episode_number
-      `;
+        `;
 
         const rows = await withPoolConnection((client) =>
           client.query(incrementShowEpisodeQuery, [decoded.id, show_id])

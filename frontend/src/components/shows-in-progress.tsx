@@ -74,7 +74,9 @@ export function ShowsInProgress({ className, ...props }: {} & React.HTMLAttribut
             }}
             className="absolute bottom-0 left-0 right-0 h-fit py-1.5 bg-black/70 dark:text-foreground text-background font-semibold text-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            {show.is_movie ? show.user_show_info?.list_type : show.user_show_info?.episode_number + "+/" + show.user_show_info?.episode_count}
+            {show.is_movie
+              ? show.user_show_info?.list_type
+              : (show.user_show_info?.episode_number ?? "0") + "+/" + (show.user_show_info?.episode_count ?? "?")}
           </div>
         </div>
       ))}
