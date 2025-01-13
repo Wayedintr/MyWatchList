@@ -203,35 +203,26 @@ SELECT
     -- Total entries
     COUNT(us.list_type) AS total_entries,
 
-    -- Total episodes watched
-    COALESCE(SUM(
-        (
-            SELECT SUM(s.episode_count)
-            FROM seasons s
-            WHERE s.show_id = us.show_id 
-              AND s.is_movie = FALSE
-              AND s.season_number < COALESCE(us.season_number, 0)
-        ) + us.episode_number
-    ), 0) AS total_episodes_watched,
-
-    -- Total runtime watched in days
-    COALESCE(SUM(
-        (
-            SELECT SUM(e.runtime)
-            FROM episodes e
-            WHERE e.show_id = us.show_id 
-              AND e.is_movie = FALSE
-              AND e.season_number < COALESCE(us.season_number, 0)
-        ) + 
-        (
-            SELECT SUM(e.runtime)
-            FROM episodes e
-            WHERE e.show_id = us.show_id 
-              AND e.is_movie = FALSE
-              AND e.season_number = COALESCE(us.season_number, 0)
-              AND e.episode_number <= COALESCE(us.episode_number, 0)
-        )
-    ), 0) / 1440.0 AS days_watched,
+   -- 5 Most used genres for 'Completed' shows
+(
+    SELECT STRING_AGG(subquery.genre_name_with_count, ', ')
+    FROM (
+        SELECT 
+            CONCAT(g.name, ' (', COUNT(*), ')') AS genre_name_with_count, 
+            COUNT(*) AS genre_count
+        FROM user_shows us_completed
+        JOIN show_genres sg 
+            ON us_completed.show_id = sg.show_id 
+            AND us_completed.is_movie = sg.is_movie
+        JOIN genres g 
+            ON sg.genre_id = g.id
+        WHERE us_completed.user_id = u.id 
+            AND us_completed.list_type = 'Completed'
+        GROUP BY g.name
+        ORDER BY genre_count DESC
+        LIMIT 5
+    ) subquery
+) AS top_genres,
 
     -- Average score
     ROUND(AVG(us.score)::NUMERIC, 2) AS mean_score

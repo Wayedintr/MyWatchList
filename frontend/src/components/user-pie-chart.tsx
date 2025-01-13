@@ -1,6 +1,4 @@
 "use client";
-
-import { TrendingUp } from "lucide-react";
 import { Pie, PieChart, Label } from "recharts";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +22,7 @@ const chartConfig = {
   },
   planToWatch: {
     label: "Plan to Watch",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(var(--chart-5))",
   },
   completed: {
     label: "Completed",
@@ -36,7 +34,7 @@ const chartConfig = {
   },  
   dropped: {
     label: "Dropped",
-    color: "hsl(var(--chart-5))",
+    color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig;
 

@@ -264,7 +264,7 @@ export default function User() {
               </div>
             </div>
 
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 max-w-80 space-y-3">
               <PieChartComponent
                 stats={{
                   watching: stats.watching_count,
@@ -274,6 +274,18 @@ export default function User() {
                   dropped: stats.dropped_count,
                 }}
               />
+
+              <Card className="p-5">
+                <Label className="text-lg font-semibold">Top Genres</Label>
+                <div className=" mt-2">
+                  {stats.top_genres?.split(",").map((genre, index) => (
+                    <div key={index} className="flex items-center mb-2">
+                      <div className="w-4 h-4 rounded-full bg-primary mr-2" />
+                      <Label>{genre}</Label>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
           </div>
         </CardContent>
@@ -357,18 +369,18 @@ function ShowCard({ show }: { show: showShort }) {
           <h2 className="text-lg font-medium text-primary hover:text-accent transition-all mb-2">{show.title}</h2>
 
           {/* Show Info */}
-          <div className="text-sm text-gray-300 flex-grow">
-            <p className="mb-1 text-gray-300">
+          <div className="text-sm text-muted-foreground flex-grow">
+            <p className="mb-1 text-muted-foreground">
               {/*@ts-ignore */}
-              List: <span className="font-medium text-gray-400">{show.user_show_info?.list_type}</span>
+              List: <span className="font-medium text-muted-foreground">{show.user_show_info?.list_type}</span>
             </p>
-            <p className="mb-1 text-gray-300">
+            <p className="mb-1 text-muted-foreground">
               {/*@ts-ignore */}
-              Score: <span className="font-medium text-gray-400">{show.user_show_info?.score}/10</span>
+              Score: <span className="font-medium text-muted-foreground">{show.user_show_info?.score}/10</span>
             </p>
-            <p className="mb-1 text-gray-300">
+            <p className="mb-1 text-muted-foreground">
               Season:{" "}
-              <span className="font-medium text-gray-400">
+              <span className="font-medium text-muted-foreground">
                 {/*@ts-ignore */}
                 {show.user_show_info?.season_number ? show.user_show_info?.season_number : "0"}/
                 {show.user_show_info?.number_of_seasons}
@@ -376,7 +388,7 @@ function ShowCard({ show }: { show: showShort }) {
             </p>
             <p>
               Episodes:{" "}
-              <span className="font-medium text-gray-400">
+              <span className="font-medium text-muted-foreground">
                 {/*@ts-ignore */}
                 {show.user_show_info?.episode_number ? show.user_show_info?.episode_number : "0"}/
                 {show.user_show_info?.episode_count ?? 0}
