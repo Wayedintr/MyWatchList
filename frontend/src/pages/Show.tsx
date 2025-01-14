@@ -490,9 +490,9 @@ export default function Show({ is_movie }: ShowProps) {
             <div className="flex gap-2">
               <Textarea
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
                 placeholder={user ? "Leave a comment..." : "Sign in to leave a comment..."}
                 className="max-h-60"
+                onChange={(e) => setComment(e.target.value.replace(/[\n\r]/g, ""))}
                 disabled={!user}
               />
               <Button size={"icon"} disabled={comment === "" || !user} onClick={handleCommentSubmit}>

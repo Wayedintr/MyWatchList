@@ -300,7 +300,7 @@ export default function User() {
             <div className="flex gap-2">
               <Textarea
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
+                onChange={(e) => setComment(e.target.value.replace(/[\n\r]/g, ""))}
                 placeholder={user ? "Leave a comment..." : "Sign in to leave a comment..."}
                 className="max-h-60"
                 disabled={!user}
