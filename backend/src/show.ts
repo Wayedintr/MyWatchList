@@ -23,6 +23,7 @@ import { removeUndefined } from "./utils";
 import { JWTPayload } from "@shared/types/auth";
 import jwt from "jsonwebtoken";
 import { DeleteShowCommentRequest, DeleteShowCommentResponse } from "@shared/types/user";
+import { isUserAdmin } from "./admin";
 
 export const showRouter = express.Router();
 
@@ -271,17 +272,31 @@ showRouter.delete(
 
       const { comment_id } = req.query as unknown as DeleteShowCommentRequest;
 
-      const deleteCommentQuery = `DELETE FROM show_comments WHERE comment_id = $1 AND user_id = $2`;
+      if (decoded.role === "admin" && (await isUserAdmin(token)) !== -1) {
+        const deleteCommentQuery = `DELETE FROM show_comments WHERE comment_id = $1`;
 
-      const deleteCommentResult = await withPoolConnection((client) =>
-        client.query(deleteCommentQuery, [comment_id, decoded.id])
-      );
+        const deleteCommentResult = await withPoolConnection((client) =>
+          client.query(deleteCommentQuery, [comment_id])
+        );
 
-      if (deleteCommentResult.rowCount === 0) {
-        return res.status(500).json({ message: "Error deleting comment", success: false });
+        if (deleteCommentResult.rowCount === 0) {
+          return res.status(500).json({ message: "Error deleting comment", success: false });
+        }
+
+        return res.status(200).json({ message: "Comment deleted successfully", success: true });
+      } else {
+        const deleteCommentQuery = `DELETE FROM show_comments WHERE comment_id = $1 AND user_id = $2`;
+
+        const deleteCommentResult = await withPoolConnection((client) =>
+          client.query(deleteCommentQuery, [comment_id, decoded.id])
+        );
+
+        if (deleteCommentResult.rowCount === 0) {
+          return res.status(500).json({ message: "Error deleting comment", success: false });
+        }
+
+        return res.status(200).json({ message: "Comment deleted successfully", success: true });
       }
-
-      return res.status(200).json({ message: "Comment deleted successfully", success: true });
     } catch (error) {
       console.error("Error deleting comment:", error);
       res.status(403).json({ message: "Error deleting comment", success: false });

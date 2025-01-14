@@ -21,7 +21,7 @@ export const adminRouter = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || "mywatchlist";
 
-async function isUserAdmin(token: string): Promise<number> {
+export async function isUserAdmin(token: string): Promise<number> {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
     if (decoded.role !== "admin") {

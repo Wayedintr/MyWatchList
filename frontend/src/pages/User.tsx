@@ -320,7 +320,9 @@ export default function User() {
                     <Dot className="text-muted-foreground w-4 h-4 shrink-0 mt-0.5" />
                     <text className="text-muted-foreground">{timeAgo(comment.date)}</text>
                     <div className="flex-grow flex justify-end">
-                      {(user?.username === comment.username || user?.username === currentUser.username) && (
+                      {(user?.username === comment.username ||
+                        user?.username === currentUser.username ||
+                        user?.role === "admin") && (
                         <Button
                           size={"icon"}
                           variant={"destructive"}
