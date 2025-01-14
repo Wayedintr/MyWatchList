@@ -31,8 +31,6 @@ import {
   SearchResponse,
   ShowRequest,
   ShowResponse,
-  userShowRequest,
-  userShowResponse,
   userStatsRequest,
   userStatsResponse,
   userFollowRequest,
@@ -46,7 +44,18 @@ import {
   DiscoverShowsRequest,
   DiscoverShowsResponse,
 } from "@shared/types/show";
-import User from "@/pages/User";
+import {
+  AddUserRequest,
+  AddUserResponse,
+  ChangeUserPasswordRequest,
+  ChangeUserPasswordResponse,
+  DeleteUserRequest,
+  DeleteUserResponse,
+  ModifyUserRequest,
+  ModifyUserResponse,
+  UserListRequest,
+  UserListResponse,
+} from "@shared/types/admin";
 
 const API_BASE_URL = process.env.API_URL || "http://localhost:3000"; // Default to empty string if not set
 
@@ -192,4 +201,24 @@ export const userFriends = async (UserFriendsRequest: UserFriendsRequest): Promi
 
 export const discoverShows = async (discoverShowsRequest: DiscoverShowsRequest): Promise<DiscoverShowsResponse> => {
   return apiRequest<DiscoverShowsResponse>(`/show/discover`, "GET", discoverShowsRequest);
+};
+
+export const addUser = async (req: AddUserRequest): Promise<AddUserResponse> => {
+  return apiRequest<AddUserResponse>(`/admin/adduser`, "POST", req);
+};
+
+export const deleteUser = async (req: DeleteUserRequest): Promise<DeleteUserResponse> => {
+  return apiRequest<DeleteUserResponse>(`/admin/deleteuser`, "POST", req);
+};
+
+export const editUser = async (req: ModifyUserRequest): Promise<ModifyUserResponse> => {
+  return apiRequest<ModifyUserResponse>(`/admin/edituser`, "POST", req);
+};
+
+export const changeUserPassword = async (req: ChangeUserPasswordRequest): Promise<ChangeUserPasswordResponse> => {
+  return apiRequest<ChangeUserPasswordResponse>(`/admin/changeuserpassword`, "POST", req);
+};
+
+export const userList = async (req: UserListRequest): Promise<UserListResponse> => {
+  return apiRequest<UserListResponse>(`/admin/userlist`, "POST", req);
 };

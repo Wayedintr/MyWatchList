@@ -21,10 +21,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-provider";
-import { ArrowRight, BookOpen, ChevronDown, Layers2, LogOut, Search, User } from "lucide-react";
+import { ArrowRight, ChartPie, ChevronDown, LogOut, Search, SearchIcon, Shield, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function Header() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
@@ -49,6 +50,13 @@ export function Header() {
               <NavigationMenuLink className={navigationMenuTriggerStyle()}>Statistics</NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
+          {user?.role === "admin" && (
+            <NavigationMenuItem>
+              <Link to={"/admin-panel"}>
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>Admin Panel</NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+          )}
         </NavigationMenuList>
       </NavigationMenu>
       <div className="flex gap-2">
@@ -126,12 +134,18 @@ function UserDropdown() {
             <User size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
             <span>My Profile</span>
           </DropdownMenuItem>
+          {user.role === "admin" && (
+            <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate(`admin-panel`)}>
+              <Shield size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
+              <span>Admin Panel</span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate("/search")}>
-            <Layers2 size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
+            <SearchIcon size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
             <span>Search</span>
           </DropdownMenuItem>
           <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate("/statistics")}>
-            <BookOpen size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
+            <ChartPie size={16} strokeWidth={2} className="opacity-60" aria-hidden="true" />
             <span>Statistics</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>

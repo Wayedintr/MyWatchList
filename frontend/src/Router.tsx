@@ -3,12 +3,11 @@ import { Applayout } from "./components/layouts/AppLayout";
 import Login from "./pages/Login";
 import NoMatch from "./pages/NoMatch";
 import Dashboard from "./pages/Home";
-import Empty from "./pages/Empty";
-import Sample from "./pages/Sample";
 import Register from "./pages/Register";
 import User from "./pages/User";
 import Show from "./pages/Show";
 import Search from "./pages/Search";
+import AdminPanel from "./pages/AdminPanel";
 
 export const router = createBrowserRouter([
   {
@@ -18,14 +17,6 @@ export const router = createBrowserRouter([
       {
         path: "",
         element: <Dashboard />,
-      },
-      {
-        path: "sample",
-        element: <Sample />,
-      },
-      {
-        path: "empty",
-        element: <Empty />,
       },
       {
         path: "user/:username",
@@ -44,9 +35,13 @@ export const router = createBrowserRouter([
         element: <Search />,
       },
       {
+        path: "admin-panel",
+        element: <AdminPanel />,
+      },
+      {
         path: "*",
         element: <NoMatch />,
-      }
+      },
     ],
   },
   {

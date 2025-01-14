@@ -346,7 +346,7 @@ export default function User() {
 
 function ShowCard({ show }: { show: showShort }) {
   if (!show.poster_path || !show.title || !show.show_id) {
-    return JSON.stringify(show);
+    return null;
   }
   console.log(show);
   const type = show.is_movie ? "movie" : "tv";

@@ -34,7 +34,7 @@ authRouter.post("/login", async (req: Request<LoginRequest>, res: Response<Login
   }
 
   try {
-    const selectUserQuery = `SELECT id, mail, username, password FROM users WHERE mail = $1`;
+    const selectUserQuery = `SELECT id, mail, role, username, password FROM users WHERE mail = $1`;
     const userResult = await withPoolConnection((client) => client.query(selectUserQuery, [mail]));
 
     if (userResult.rows.length === 0) {
@@ -50,7 +50,9 @@ authRouter.post("/login", async (req: Request<LoginRequest>, res: Response<Login
     }
 
     // Generate JWT with user information
-    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "24h" });
+    const token = jwt.sign({ id: user.id, mail: user.mail, role: user.role } as JWTPayload, JWT_SECRET, {
+      expiresIn: "24h",
+    });
 
     // Set token in HTTP-only cookie
     res.cookie("authToken", token, {
@@ -66,6 +68,7 @@ authRouter.post("/login", async (req: Request<LoginRequest>, res: Response<Login
         id: user.id,
         mail: user.mail,
         username: user.username,
+        role: user.role,
       } as User,
     });
   } catch (err) {
@@ -85,6 +88,10 @@ authRouter.post("/register", async (req: Request<RegisterRequest>, res: Response
 
   if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
     return res.status(400).json({ message: "Invalid username." });
+  }
+
+  if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(mail)) {
+    return res.status(400).json({ message: "Invalid email." });
   }
 
   try {
@@ -108,7 +115,7 @@ authRouter.post("/register", async (req: Request<RegisterRequest>, res: Response
     const insertUserQuery = `
       INSERT INTO users (username, password, mail)
       VALUES ($1, $2, $3)
-      RETURNING id, mail, username
+      RETURNING id, mail, username, role
     `;
 
     const result = await withPoolConnection((client) =>
@@ -118,7 +125,9 @@ authRouter.post("/register", async (req: Request<RegisterRequest>, res: Response
     const user = result.rows[0];
 
     // Generate JWT with user information
-    const token = jwt.sign({ id: user.id, mail: user.mail } as JWTPayload, JWT_SECRET, { expiresIn: "24h" });
+    const token = jwt.sign({ id: user.id, mail: user.mail, role: user.role } as JWTPayload, JWT_SECRET, {
+      expiresIn: "24h",
+    });
 
     // Set token in HTTP-only cookie
     res.cookie("authToken", token, {
@@ -157,7 +166,7 @@ authRouter.get("/me", async (req: Request, res: Response<UserResponse>) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
-    const selectUserQuery = `SELECT id, mail, username FROM users WHERE id = $1`;
+    const selectUserQuery = `SELECT id, mail, username, role FROM users WHERE id = $1`;
     const userResult = await withPoolConnection((client) => client.query(selectUserQuery, [decoded.id]));
 
     if (userResult.rows.length === 0) {

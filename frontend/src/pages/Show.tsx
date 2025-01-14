@@ -44,7 +44,7 @@ export default function Show({ is_movie }: ShowProps) {
     score: null,
   });
 
-  const [loading, setLoading] = useState<boolean>(true);
+  const [_, setLoading] = useState<boolean>(true);
   const [userShowInfoLoading, setUserShowInfoLoading] = useState<boolean>(true);
 
   const [comment, setComment] = useState<string>("");
@@ -97,21 +97,9 @@ export default function Show({ is_movie }: ShowProps) {
       if (res?.show_user_info) {
         setUserShowInfo(res.show_user_info);
       }
+      setUserShowInfoLoading(false);
     });
-    setUserShowInfoLoading(false);
   }, [show_id, is_movie]);
-
-  useEffect(() => {
-    if (!loading) {
-      list({
-        is_movie: is_movie,
-        show_id: show_id ? parseInt(show_id) : -1,
-        user_show_info: userShowInfo,
-      }).then((res) => {
-        console.log(res);
-      });
-    }
-  }, [userShowInfo, loading]);
 
   const handleCommentSubmit = () => {
     makeShowComment({
@@ -157,6 +145,18 @@ export default function Show({ is_movie }: ShowProps) {
       }
     });
   };
+
+  useEffect(() => {
+    if (!userShowInfoLoading) {
+      list({
+        is_movie: is_movie,
+        show_id: show_id ? parseInt(show_id) : -1,
+        user_show_info: userShowInfo,
+      }).then((res) => {
+        console.log(res);
+      });
+    }
+  }, [userShowInfo, userShowInfoLoading]);
 
   return (
     <div className="container">
@@ -206,6 +206,9 @@ export default function Show({ is_movie }: ShowProps) {
                   { value: "On Hold", label: "On Hold" },
                 ]}
                 onChange={(value) => {
+                  if (userShowInfoLoading) {
+                    return;
+                  }
                   if (value === "Completed" && !is_movie) {
                     // Lock season and episode numbers to the last available values
                     const lastSeason = data.seasons[data.seasons.length - 1];
@@ -249,6 +252,9 @@ export default function Show({ is_movie }: ShowProps) {
                       label: season.name || `Season ${season.season_number}`,
                     }))}
                     onChange={(value) => {
+                      if (userShowInfoLoading) {
+                        return;
+                      }
                       setUserShowInfo({ ...userShowInfo, season_number: value });
                     }}
                     disableSearch
@@ -270,24 +276,34 @@ export default function Show({ is_movie }: ShowProps) {
                       <MinusCircle className="w-full h-full" />
                     </button>
 
-                    <Input
-                      type="number"
-                      value={userShowInfo.season_number ? userShowInfo.episode_number?.toString() || 0 : ""}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value);
-                        if (!isNaN(value)) {
-                          const clamped = Math.min(
-                            value,
-                            data.seasons[Number(userShowInfo.season_number)]?.episode_count || 0
-                          );
-                          setUserShowInfo({ ...userShowInfo, episode_number: clamped });
-                        } else {
-                          setUserShowInfo({ ...userShowInfo, episode_number: null });
-                        }
-                      }}
-                      className="bg-background w-20 text-left peer pe-9"
-                      disabled={!userShowInfo.season_number}
-                    />
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={userShowInfo.season_number ? userShowInfo.episode_number?.toString() || 0 : ""}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value)) {
+                            const clamped = Math.min(
+                              value,
+                              data.seasons[Number(userShowInfo.season_number)]?.episode_count || 0
+                            );
+                            setUserShowInfo({ ...userShowInfo, episode_number: clamped });
+                          } else {
+                            setUserShowInfo({ ...userShowInfo, episode_number: null });
+                          }
+                        }}
+                        className="bg-background w-20 text-left peer pe-9"
+                        disabled={!userShowInfo.season_number}
+                      />
+
+                      <div>
+                        {userShowInfo.number_of_seasons && (
+                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                            / {userShowInfo.number_of_seasons}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
                     <button
                       className="rounded-full h-5 w-5 hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
@@ -322,6 +338,9 @@ export default function Show({ is_movie }: ShowProps) {
                     label: (i + 1).toString(),
                   }))}
                   onChange={(value) => {
+                    if (userShowInfoLoading) {
+                      return;
+                    }
                     setUserShowInfo({ ...userShowInfo, score: value });
                   }}
                   placeholder="Rate..."

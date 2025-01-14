@@ -112,7 +112,7 @@ export default function Search() {
       top: 0,
       behavior: "smooth",
     });
-  }, [searchRequest.page]);
+  }, [searchRequest.page, searchRequest.type]);
 
   return (
     <div className="flex flex-col items-center mt-8 mx-4 md:mx-8 lg:mx-16 xl:mx-40">
@@ -155,7 +155,7 @@ export default function Search() {
       <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 mb-4">
         {result?.results &&
           result.results.map((result) => (
-            <Link to={`/show/${params.get("type") === "movie" ? "movie" : "tv"}/${result.id}`}>
+            <Link to={`/show/${searchRequest.type}/${result.id}`}>
               <Card key={result.id} className="cursor-pointer overflow-clip rounded-md min-h-[22rem]">
                 <Image
                   src={`https://image.tmdb.org/t/p/w200${result.poster_path}`}
@@ -163,10 +163,10 @@ export default function Search() {
                   className="w-full aspect-[2/3] object-cover"
                 />
                 <h2 className="font-bold w-full text-center p-2.5">
-                    {result.title || result.name}{" "}
-                    <span className="font-semibold text-muted-foreground">
-                      ({(result.release_date || result.first_air_date)?.split("-")[0]})
-                    </span>
+                  {result.title || result.name}{" "}
+                  <span className="font-semibold text-muted-foreground">
+                    ({(result.release_date || result.first_air_date)?.split("-")[0]})
+                  </span>
                 </h2>
               </Card>
             </Link>

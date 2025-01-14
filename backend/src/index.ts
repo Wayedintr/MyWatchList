@@ -7,6 +7,7 @@ import { createDatabase, createTables } from "./queries";
 import { authenticateToken, authRouter } from "./auth";
 import { userRouter } from "./user";
 import { showRouter } from "./show";
+import { adminRouter } from "./admin";
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use(cookieParser());
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
 app.use("/show", showRouter);
+app.use("/admin", adminRouter);
 
 const initializeDatabase = async () => {
   await createDatabase();

@@ -20,6 +20,7 @@ export interface User {
   id: number;
   mail: string;
   username: string;
+  role: string;
 }
 
 export interface UserResponse {
@@ -50,4 +51,5 @@ export interface UserFriendsResponse {
 export interface JWTPayload {
   id: string;
   mail: string;
+  role: string;
 }
