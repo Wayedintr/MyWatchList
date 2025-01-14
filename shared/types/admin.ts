@@ -61,3 +61,12 @@ export interface RemoveAllShowsResponse {
   message: string;
   success: boolean;
 }
+
+export interface PreloadShowsRequest {
+  page_count: number;
+}
+
+
+export interface PreloadShowsResponse {
+  message: string;
+}

@@ -8,6 +8,8 @@ import {
   DeleteUserResponse,
   ModifyUserRequest,
   ModifyUserResponse,
+  PreloadShowsRequest,
+  PreloadShowsResponse,
   RemoveAllShowsResponse,
   UserListRequest,
   UserListResponse,
@@ -16,6 +18,8 @@ import { JWTPayload } from "@shared/types/auth";
 import jwt from "jsonwebtoken";
 import { withPoolConnection } from "./db";
 import bcrypt from "bcryptjs";
+import axios from "axios";
+import { insertShowById } from "./queries";
 
 export const adminRouter = express.Router();
 
@@ -228,3 +232,52 @@ adminRouter.post("/removeallshows", async (req, res: Response<RemoveAllShowsResp
     res.status(403).json({ message: "Error removing all shows", success: false });
   }
 });
+
+adminRouter.post(
+  "/preloadshows",
+  async (req: Request<{}, {}, PreloadShowsRequest>, res: Response<PreloadShowsResponse>) => {
+    const id = await isUserAdmin(req.cookies?.authToken || "");
+    if (id === -1) {
+      return res.status(403).json({ message: "User is not admin" });
+    }
+
+    const { page_count } = req.body;
+
+    console.log(`Preloading ${page_count}x2 pages of shows...`);
+
+    try {
+      for (let i = 1; i <= page_count; i++) {
+        const urlTV = `https://api.themoviedb.org/3/discover/tv`;
+        const urlMovie = `https://api.themoviedb.org/3/discover/movie`;
+        const searchParams = {
+          api_key: process.env.TMDB_API_KEY,
+          sort_by: "popularity.desc",
+          page: i,
+        };
+
+        const [responseTv, responseMovie] = await Promise.all([
+          axios.get(urlTV, { params: searchParams }),
+          axios.get(urlMovie, { params: searchParams }),
+        ]);
+
+        const tvShowIds = responseTv.data.results.map((show: any) => show.id);
+        const movieShowIds = responseMovie.data.results.map((show: any) => show.id);
+
+        // Sequentially insert all shows for this page
+        for (const showId of tvShowIds) {
+          await insertShowById(showId, false);
+        }
+        for (const showId of movieShowIds) {
+          await insertShowById(showId, true);
+        }
+
+        console.log(`Preloaded page ${i}`);
+      }
+
+      res.status(200).json({ message: "Shows preloaded successfully" });
+    } catch (error) {
+      console.error("Error during preload:", error);
+      res.status(500).json({ message: "Error preloading shows" });
+    }
+  }
+);

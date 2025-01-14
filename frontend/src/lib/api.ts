@@ -53,6 +53,8 @@ import {
   DeleteUserResponse,
   ModifyUserRequest,
   ModifyUserResponse,
+  PreloadShowsRequest,
+  PreloadShowsResponse,
   RemoveAllShowsResponse,
   UserListRequest,
   UserListResponse,
@@ -226,4 +228,8 @@ export const userList = async (req: UserListRequest): Promise<UserListResponse> 
 
 export const removeAllShows = async (): Promise<RemoveAllShowsResponse> => {
   return apiRequest<RemoveAllShowsResponse>(`/admin/removeallshows`, "POST");
+};
+
+export const preloadShows = async (req: PreloadShowsRequest): Promise<PreloadShowsResponse> => {
+  return apiRequest<PreloadShowsResponse>(`/admin/preloadshows`, "POST", req);
 };

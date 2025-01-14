@@ -347,14 +347,13 @@ export const insertShowById = async (showId: number, is_movie: boolean, basic: b
 
   await withPoolConnection(async (client: PoolClient) => {
     try {
-      await client.query("SELECT status FROM shows WHERE show_id = $1 AND is_movie = $2", [showId, is_movie]);
-
       const apiUrl = `https://api.themoviedb.org/3/${is_movie ? "movie" : "tv"}/${showId}?api_key=${
         process.env.TMDB_API_KEY
       }`;
       const response = await axios.get(apiUrl);
 
       if (response.status !== 200) {
+        console.error(`[ERROR] Failed to fetch movie data for ID ${showId}`);
         throw new Error(`Failed to fetch movie data for ID ${showId}`);
       }
 
@@ -543,5 +542,5 @@ export const insertShowById = async (showId: number, is_movie: boolean, basic: b
         console.error(`[ERROR] Error inserting show with ID ${showId}:`, err.message);
       }
     }
-  });
+  }, true);
 };

@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-provider";
-import { addUser, changeUserPassword, deleteUser, editUser, removeAllShows, userList } from "@/lib/api";
+import { addUser, changeUserPassword, deleteUser, editUser, preloadShows, removeAllShows, userList } from "@/lib/api";
 import { ManagedUser } from "@shared/types/admin";
 import { Check, Pencil, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -519,8 +519,28 @@ function UserPage() {
 }
 
 function ShowPage() {
+  const [pageCount, setPageCount] = useState(1);
+
   return (
     <div className="flex flex-col gap-4 h-full">
+      <div className="flex gap-2 items-center">
+        <Button
+          onClick={() => {
+            preloadShows({ page_count: pageCount }).then((res) => {
+              alert(res.message);
+            });
+          }}
+        >
+          Preload popular shows to database
+        </Button>
+        <Input
+          type="number"
+          value={pageCount}
+          onChange={(e) => {
+            setPageCount(parseInt(e.target.value));
+          }}
+        />x40
+      </div>
       <Button
         variant={"destructive"}
         onClick={() => {
