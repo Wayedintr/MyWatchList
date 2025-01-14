@@ -527,7 +527,7 @@ userRouter.post(
       RETURNING comment_id`;
 
       const insertCommentResult = await withPoolConnection((client) =>
-        client.query(insertCommentQuery, [decoded.id, target_user_id, comment])
+        client.query(insertCommentQuery, [decoded.id, target_user_id, comment.trim()])
       );
 
       if (insertCommentResult.rowCount === 0) {

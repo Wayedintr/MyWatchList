@@ -239,7 +239,7 @@ showRouter.post(
       RETURNING comment_id`;
 
       const insertCommentResult = await withPoolConnection((client) =>
-        client.query(insertCommentQuery, [show_id, type === "movie", comment, decoded.id])
+        client.query(insertCommentQuery, [show_id, type === "movie", comment.trim(), decoded.id])
       );
 
       if (insertCommentResult.rowCount === 0) {
