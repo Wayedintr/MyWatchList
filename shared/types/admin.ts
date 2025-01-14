@@ -16,14 +16,17 @@ export interface AddUserResponse {
 }
 
 export interface UserListRequest {
-  limit: number;
-  offset: number;
+  page: number;
   query?: string;
 }
 
 export interface UserListResponse {
   message: string;
   users?: ManagedUser[];
+  pagination?: {
+    totalPages: number;
+    currentPage: number;
+  };
 }
 
 export interface DeleteUserRequest {
@@ -50,6 +53,11 @@ export interface ChangeUserPasswordRequest {
 }
 
 export interface ChangeUserPasswordResponse {
+  message: string;
+  success: boolean;
+}
+
+export interface RemoveAllShowsResponse {
   message: string;
   success: boolean;
 }

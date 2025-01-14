@@ -53,6 +53,7 @@ import {
   DeleteUserResponse,
   ModifyUserRequest,
   ModifyUserResponse,
+  RemoveAllShowsResponse,
   UserListRequest,
   UserListResponse,
 } from "@shared/types/admin";
@@ -221,4 +222,8 @@ export const changeUserPassword = async (req: ChangeUserPasswordRequest): Promis
 
 export const userList = async (req: UserListRequest): Promise<UserListResponse> => {
   return apiRequest<UserListResponse>(`/admin/userlist`, "POST", req);
+};
+
+export const removeAllShows = async (): Promise<RemoveAllShowsResponse> => {
+  return apiRequest<RemoveAllShowsResponse>(`/admin/removeallshows`, "POST");
 };

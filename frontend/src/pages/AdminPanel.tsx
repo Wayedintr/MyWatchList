@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-provider";
-import { addUser, changeUserPassword, deleteUser, editUser, userList } from "@/lib/api";
+import { addUser, changeUserPassword, deleteUser, editUser, removeAllShows, userList } from "@/lib/api";
 import { ManagedUser } from "@shared/types/admin";
 import { Check, Pencil, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -73,22 +73,20 @@ function UserPage() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [query, setQuery] = useState("");
 
-  const limit = 10;
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true); // Tracks if more data is available
+  const [page, setPage] = useState(1); // Current page
+  const [totalPages, setTotalPages] = useState(1); // Total pages from the API
   const [loading, setLoading] = useState(false); // Tracks loading state
 
-  const loadUsers = async (newOffset: number) => {
+  const loadUsers = async (page: number) => {
     setLoading(true);
     try {
       const res = await userList({
-        offset: newOffset,
-        limit: limit,
-        query: query,
+        page,
+        query,
       });
       if (res.users) {
-        setUsers((prev) => [...prev, ...res.users!]);
-        setHasMore(res.users.length === limit); // Check if more data is available
+        setUsers(res.users);
+        setTotalPages(res.pagination?.totalPages!); // Update total pages
       }
     } catch (error) {
       console.error("Error loading users:", error);
@@ -98,19 +96,18 @@ function UserPage() {
   };
 
   const reloadUsers = () => {
-    setUsers([]);
-    setOffset(0);
-    loadUsers(0);
+    setPage(1);
+    loadUsers(1);
   };
 
   useEffect(() => {
-    loadUsers(0);
-  }, []);
+    loadUsers(page);
+  }, [page]);
 
-  const handleLoadMore = () => {
-    const newOffset = offset + limit;
-    setOffset(newOffset);
-    loadUsers(newOffset);
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
   };
 
   const columns: ColumnDef<ManagedUser>[] = [
@@ -252,7 +249,7 @@ function UserPage() {
           <Combobox
             mandatory
             disableSearch
-            value={row.getValue("role")}
+            value={row.original.role}
             elements={[
               { value: "admin", label: "Admin" },
               { value: "user", label: "User" },
@@ -360,28 +357,39 @@ function UserPage() {
       <div className="flex items-center justify-between h-full">
         <div className="flex gap-4 items-center">
           <h2 className="text-2xl font-semibold">Users</h2>
-          <div className="relative">
-            <Input
-              id="input-26"
-              className="peer ps-9"
-              placeholder="Search by username..."
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-muted-foreground/80 peer-disabled:opacity-50">
-              <Search size={16} strokeWidth={2} />
+          <div className="flex gap-1">
+            <div className="relative">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  reloadUsers();
+                }}
+              >
+                <Input
+                  id="input-search-user-admin"
+                  className="peer ps-9"
+                  placeholder="Search by username..."
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </form>
+              <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-muted-foreground/80 peer-disabled:opacity-50">
+                <Search size={16} strokeWidth={2} />
+              </div>
             </div>
+            <Button
+              onClick={() => {
+                reloadUsers();
+              }}
+            >
+              Search
+            </Button>
           </div>
-          <Button
-            onClick={() => {
-              reloadUsers();
-            }}
-          >
-            Search
-          </Button>
 
-          <div className="text-muted-foreground text-sm">The account you are logged in as is not visible in this list.</div>
+          <div className="text-muted-foreground text-sm">
+            The account you are logged in as is not visible in this list.
+          </div>
         </div>
       </div>
 
@@ -428,13 +436,20 @@ function UserPage() {
               )}
             </TableBody>
           </Table>
-          {hasMore && (
-            <Button variant={"outline"} className="self-center mt-4" onClick={handleLoadMore} disabled={loading}>
-              {loading ? "Loading..." : "Load More"}
-            </Button>
-          )}
         </div>
       </ScrollArea>
+
+      <div className="flex justify-center items-center gap-2 mt-4">
+        <Button variant="outline" disabled={page === 1 || loading} onClick={() => handlePageChange(page - 1)}>
+          Previous
+        </Button>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <Button variant="outline" disabled={page === totalPages || loading} onClick={() => handlePageChange(page + 1)}>
+          Next
+        </Button>
+      </div>
 
       <div className="flex gap-1 items-end">
         <div className="flex flex-col gap-1">
@@ -490,7 +505,7 @@ function UserPage() {
           onClick={() => {
             addUser({ user: newUser }).then((res) => {
               if (res.user) {
-                setUsers([...users, res.user]);
+                reloadUsers();
                 setNewUser({ username: "", mail: "", role: "user", password: "", id: -1 });
               }
             });
@@ -506,7 +521,16 @@ function UserPage() {
 function ShowPage() {
   return (
     <div className="flex flex-col gap-4 h-full">
-      <h2 className="text-2xl font-semibold">Shows</h2>
+      <Button
+        variant={"destructive"}
+        onClick={() => {
+          removeAllShows().then(() => {
+            alert("Removed all shows from database");
+          });
+        }}
+      >
+        Remove all shows from database (Cascading delete, can not be undone)
+      </Button>
     </div>
   );
 }

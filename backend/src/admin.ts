@@ -8,6 +8,7 @@ import {
   DeleteUserResponse,
   ModifyUserRequest,
   ModifyUserResponse,
+  RemoveAllShowsResponse,
   UserListRequest,
   UserListResponse,
 } from "@shared/types/admin";
@@ -157,13 +158,73 @@ adminRouter.post("/userlist", async (req: Request<{}, {}, UserListRequest>, res:
   }
 
   try {
-    const { limit, offset, query } = req.body;
+    const { page, query } = req.body;
 
-    const selectUserQuery = `SELECT id, mail, username, role FROM users WHERE username ILIKE '%${query}%' AND id != $3 ORDER BY id LIMIT $1 OFFSET $2`;
-    const selectUserResult = await withPoolConnection((client) => client.query(selectUserQuery, [limit, offset, id]));
+    // Set a fixed limit for pagination
+    const limit = 10; // You can adjust this as needed
 
-    return res.status(200).json({ message: "User list retrieved successfully", users: selectUserResult.rows });
+    // Validate inputs
+    if (!page || page <= 0) {
+      return res.status(400).json({ message: "Invalid page number" });
+    }
+
+    // Calculate offset based on page and fixed limit
+    const offset = (page - 1) * limit;
+
+    const selectUserQuery = `
+        SELECT id, mail, username, role 
+        FROM users 
+        WHERE username ILIKE $1 AND id != $2 
+        ORDER BY id 
+        LIMIT $3 OFFSET $4
+      `;
+
+    const selectUserResult = await withPoolConnection((client) =>
+      client.query(selectUserQuery, [`%${query}%`, id, limit, offset])
+    );
+
+    // Count total users matching the query for pagination
+    const countQuery = `
+        SELECT COUNT(*) as total
+        FROM users 
+        WHERE username ILIKE $1 AND id != $2
+      `;
+
+    const countResult = await withPoolConnection((client) => client.query(countQuery, [`%${query}%`, id]));
+
+    const totalUsers = parseInt(countResult.rows[0].total, 10);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    return res.status(200).json({
+      message: "User list retrieved successfully",
+      users: selectUserResult.rows,
+      pagination: {
+        totalPages,
+        currentPage: page,
+      },
+    });
   } catch (err) {
-    res.status(403).json({ message: "Error getting user list" });
+    console.error(err);
+    res.status(500).json({ message: "Error getting user list" });
+  }
+});
+
+adminRouter.post("/removeallshows", async (req, res: Response<RemoveAllShowsResponse>) => {
+  const id = await isUserAdmin(req.cookies?.authToken || "");
+  if (id === -1) {
+    return res.status(403).json({ message: "User is not admin", success: false });
+  }
+
+  try {
+    const removeAllShowsQuery = `DELETE FROM shows`;
+    const removeAllShowsResult = await withPoolConnection((client) => client.query(removeAllShowsQuery));
+
+    if (removeAllShowsResult.rowCount === 0) {
+      return res.status(500).json({ message: "Error removing all shows", success: false });
+    } else {
+      return res.status(200).json({ message: "All shows removed successfully", success: true });
+    }
+  } catch (err) {
+    res.status(403).json({ message: "Error removing all shows", success: false });
   }
 });
