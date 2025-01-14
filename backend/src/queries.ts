@@ -63,6 +63,7 @@ export const createTables = async (): Promise<void> => {
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     mail VARCHAR(255) NOT NULL UNIQUE,
+    role VARCHAR(255) NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
     CONSTRAINT username_validity CHECK (
         username ~ '^[a-zA-Z0-9_]{3,30}$'
     )
