@@ -8,6 +8,7 @@ import User from "./pages/User";
 import Show from "./pages/Show";
 import Search from "./pages/Search";
 import AdminPanel from "./pages/AdminPanel";
+import Statistics from "./pages/Statistics";
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +38,10 @@ export const router = createBrowserRouter([
       {
         path: "admin-panel",
         element: <AdminPanel />,
+      },
+      {
+        path: "statistics",
+        element: <Statistics />,
       },
       {
         path: "*",

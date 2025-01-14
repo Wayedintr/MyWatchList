@@ -255,7 +255,7 @@ export default function Show({ is_movie }: ShowProps) {
                       if (userShowInfoLoading) {
                         return;
                       }
-                      setUserShowInfo({ ...userShowInfo, season_number: value });
+                      setUserShowInfo({ ...userShowInfo, season_number: value, episode_number: 0 });
                     }}
                     disableSearch
                   />
@@ -297,9 +297,9 @@ export default function Show({ is_movie }: ShowProps) {
                       />
 
                       <div>
-                        {userShowInfo.number_of_seasons && (
-                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                            / {userShowInfo.number_of_seasons}
+                        {data?.seasons?.[Number(userShowInfo.season_number)]?.episode_count && (
+                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+                            / {data?.seasons?.[Number(userShowInfo.season_number)]?.episode_count}
                           </span>
                         )}
                       </div>
