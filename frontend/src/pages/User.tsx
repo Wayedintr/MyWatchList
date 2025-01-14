@@ -199,7 +199,7 @@ export default function User() {
             <div className="flex-shrink-0">
               <Avatar className="w-40 h-40 rounded-full overflow-hidden shadow-lg">
                 <AvatarImage
-                  src={`https://api.dicebear.com/9.x/identicon/svg?seed=${currentUser.username}`}
+                  src={`https://api.dicebear.com/9.x/identicon/svg?seed=${currentUser.user_id}`}
                   alt={currentUser.username}
                 />
                 <AvatarFallback>
@@ -231,7 +231,7 @@ export default function User() {
                     <Link key={friend.username} to={`/user/${friend.username}`}>
                       <Avatar className="w-12 h-12 rounded-full overflow-hidden">
                         <AvatarImage
-                          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${friend.username}`}
+                          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${friend.user_id}`}
                           alt={friend.username}
                         />
                         <AvatarFallback>
