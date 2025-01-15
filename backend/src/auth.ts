@@ -113,8 +113,8 @@ authRouter.post("/register", async (req: Request<RegisterRequest>, res: Response
 
     // Insert the new user into the database
     const insertUserQuery = `
-      INSERT INTO users (username, password, mail)
-      VALUES ($1, $2, $3)
+      INSERT INTO users (username, password, mail, role)
+      VALUES ($1, $2, $3, CASE WHEN (SELECT COUNT(*) FROM users) = 0 THEN 'admin' ELSE 'user' END)
       RETURNING id, mail, username, role
     `;
 
