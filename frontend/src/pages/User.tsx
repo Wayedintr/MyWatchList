@@ -380,22 +380,26 @@ function ShowCard({ show }: { show: showShort }) {
               {/*@ts-ignore */}
               Score: <span className="font-medium text-muted-foreground">{show.user_show_info?.score}/10</span>
             </p>
-            <p className="mb-1 text-muted-foreground">
-              Season:{" "}
-              <span className="font-medium text-muted-foreground">
-                {/*@ts-ignore */}
-                {show.user_show_info?.season_number ? show.user_show_info?.season_number : "0"}/
-                {show.user_show_info?.number_of_seasons}
-              </span>
-            </p>
-            <p>
-              Episodes:{" "}
-              <span className="font-medium text-muted-foreground">
-                {/*@ts-ignore */}
-                {show.user_show_info?.episode_number ? show.user_show_info?.episode_number : "0"}/
-                {show.user_show_info?.episode_count ?? 0}
-              </span>
-            </p>
+            {!show.is_movie && (
+              <>
+                <p className="mb-1 text-muted-foreground">
+                  Season:{" "}
+                  <span className="font-medium text-muted-foreground">
+                    {/*@ts-ignore */}
+                    {show.user_show_info?.season_number ? show.user_show_info?.season_number : "0"}/
+                    {show.user_show_info?.number_of_seasons}
+                  </span>
+                </p>
+                <p>
+                  Episodes:{" "}
+                  <span className="font-medium text-muted-foreground">
+                    {/*@ts-ignore */}
+                    {show.user_show_info?.episode_number ? show.user_show_info?.episode_number : "0"}/
+                    {show.user_show_info?.episode_count ?? 0}
+                  </span>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
