@@ -110,7 +110,7 @@ userRouter.get("/shows", async (req: Request, res: Response<userShowResponse>) =
     AND
     se.season_number = us.season_number
     WHERE 
-    u.username = $1; -- Replace $1 with the actual username parameter
+    u.username = $1;
 `;
     const userShowQueryResult = await withPoolConnection((client) => client.query(selectUserShowQuery, [username]));
 
