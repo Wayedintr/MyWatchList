@@ -542,5 +542,5 @@ export const insertShowById = async (showId: number, is_movie: boolean, basic: b
         console.error(`[ERROR] Error inserting show with ID ${showId}:`, err.message);
       }
     }
-  }, true);
+  }, false);
 };
